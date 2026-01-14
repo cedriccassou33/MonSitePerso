@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page de Connexion</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Ajout d'une icône pour voir le mot de passe -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <div class="form-container">
+            <h2>Connexion</h2>
+            <form id="loginForm">
+                <div class="input-group">
+                    <input type="text" id="username" placeholder="Identifiant" required>
+                </div>
+                <div class="input-group password-group">
+                    <input type="password" id="password" placeholder="Mot de passe" required>
+                    <i class="toggle-password fas fa-eye" id="togglePassword"></i>
+                </div>
+                <div class="button-group">
+                    <button type="button" id="loginBtn">Connexion</button>
+                    <button type="button" id="registerBtn">Créer un compte</button>
+                </div>
+            </form>
+            <div id="message"></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
