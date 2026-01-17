@@ -1,4 +1,3 @@
-
 // script.js
 
 // 0) Initialisation Supabase
