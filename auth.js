@@ -1,14 +1,14 @@
 // auth.js
-// 1) Initialisation Supabase (mêmes <meta> que dans index.html)
+// 1) Initialisation Supabase (mêmes <meta> que dans accueil.html)
 const SUPABASE_URL = document.querySelector('meta[name="supabase-url"]').content;
 const SUPABASE_ANON_KEY = document.querySelector('meta[name="supabase-anon"]').content;
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 2) Si déjà connecté → aller sur index.html
+// 2) Si déjà connecté → aller sur accueil.html
 (async () => {
   const { data: { session } } = await sb.auth.getSession();
   if (session?.user) {
-    window.location.href = 'index.html';
+    window.location.href = 'accueil.html';
   }
 })();
 
@@ -41,8 +41,8 @@ document.getElementById('btn-login').addEventListener('click', async () => {
     await sb.rpc('mark_last_login', { p_user: uid });
   } catch (_) {}
 
-  // OK → aller sur index.html
-  window.location.href = 'index.html';
+  // OK → aller sur accueil.html
+  window.location.href = 'accueil.html';
 });
 
 // 4) Création de compte
