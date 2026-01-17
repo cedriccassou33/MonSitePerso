@@ -80,14 +80,14 @@ async function waitForSession(maxTries = 3, delayMs = 250) {
   return null;
 }
 
-// 4) Garde d'auth : on attend la session, sinon on redirige
+/* // 4) Garde d'auth : on attend la session, sinon on redirige
 (async () => {
   const session = await waitForSession();
   if (!session || !session.user) {
     // Pas de session même après attente → on renvoie vers le login
     window.location.href = 'home.html';
     return;
-  }
+  } */
 
   // Session OK → on attache les handlers et on charge les données
   attachFormHandler();
