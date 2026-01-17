@@ -1,33 +1,43 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Page de Connexion</title>
-    <link rel="stylesheet" href="style.css">
-    <!-- Ajout d'une icône pour voir le mot de passe -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <meta charset="utf-8" />
+  <title>Mini test Supabase</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- ⚠️ Remplace les contenus ci-dessous par tes vraies valeurs depuis Supabase (Settings → API) -->
+  <meta name="supabase-url" content="https://axlzgvfbmqjwvmmzpimr.supabase.co">
+  <meta name="supabase-anon" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4bHpndmZibXFqd3ZtbXpwaW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MDI3NjQsImV4cCI6MjA4NDA3ODc2NH0.7S7PbON5F_FH2x2Ashd1-9XU6JW2qYMZ482uv0m4kFI">
+
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; margin: 3rem auto; max-width: 560px; line-height: 1.5; }
+    h1 { font-size: 1.4rem; margin-bottom: .5rem; }
+    form { display: flex; gap: .5rem; margin: 1rem 0; }
+    input[type="text"] { flex: 1; padding: .6rem .8rem; }
+    button { padding: .6rem 1rem; cursor: pointer; }
+    ul { padding-left: 1.2rem; }
+    .ok { color: #0a7f2e; }
+    .err { color: #b00020; white-space: pre-wrap; }
+    .small { color: #666; font-size: .9rem; }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <div class="form-container">
-            <h2>Connexion</h2>
-            <form id="loginForm">
-                <div class="input-group">
-                    <input type="text" id="username" placeholder="Identifiant" required>
-                </div>
-                <div class="input-group password-group">
-                    <input type="password" id="password" placeholder="Mot de passe" required>
-                    <i class="toggle-password fas fa-eye" id="togglePassword"></i>
-                </div>
-                <div class="button-group">
-                    <button type="button" id="loginBtn">Connexion</button>
-                    <button type="button" id="registerBtn">Créer un compte</button>
-                </div>
-            </form>
-            <div id="message"></div>
-        </div>
-    </div>
-    <script src="script.js"></script>
+  <h1>Test : enregistrer un message dans Supabase</h1>
+  <p class="small">Tape un petit texte, clique “Enregistrer” et vérifie qu’il apparaît dans la liste.</p>
+
+  <form id="msg-form">
+    <input id="msg-input" type="text" placeholder="Votre message (1–500 caractères)" maxlength="500" />
+    <button type="submit">Enregistrer</button>
+  </form>
+
+  <p id="status"></p>
+
+  <h2>Messages enregistrés (les 10 derniers)</h2>
+  <ul id="list"></ul>
+
+  <!-- SDK officiel Supabase côté navigateur -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Ton script applicatif -->
+  <script src="./assets/app.js"></script>
 </body>
 </html>
