@@ -10,6 +10,9 @@ const input = document.getElementById('msg-input');
 const list = document.getElementById('list');
 const statusEl = document.getElementById('status');
 
+const { data: { session } } = await sb.auth.getSession();
+if (!session?.user) window.location.href = 'login.html';
+
 function setStatus(msg, ok = true) {
   statusEl.className = ok ? 'ok' : 'err';
   statusEl.textContent = msg;
