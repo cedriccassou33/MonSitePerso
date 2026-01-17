@@ -1,44 +1,53 @@
-
 <!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
-  <title>Mini test Supabase</title>
+  <title>Connexion</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- ⚠️ Remplace par tes vraies valeurs (MÊMES que dans login.html) -->
+  <!-- ⚠️ Remets ici EXACTEMENT les mêmes valeurs que dans index.html -->
   <meta name="supabase-url" content="https://axlzgvfbmqjwvmmzpimr.supabase.co">
   <meta name="supabase-anon" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4bHpndmZibXFqd3ZtbXpwaW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MDI3NjQsImV4cCI6MjA4NDA3ODc2NH0.7S7PbON5F_FH2x2Ashd1-9XU6JW2qYMZ482uv0m4kFI">
 
   <style>
-    body { font-family: system-ui, Arial, sans-serif; margin: 3rem auto; max-width: 560px; line-height: 1.5; }
-    h1 { font-size: 1.4rem; margin-bottom: .5rem; }
-    form { display: flex; gap: .5rem; margin: 1rem 0; }
-    input[type="text"] { flex: 1; padding: .6rem .8rem; }
-    button { padding: .6rem 1rem; cursor: pointer; }
-    ul { padding-left: 1.2rem; }
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, Arial, sans-serif; margin: 3rem auto; max-width: 400px; line-height: 1.5; }
+    h1 { font-size: 1.4rem; margin-bottom: 1rem; }
+    form { display: grid; gap: .75rem; margin-top: 1rem; }
+    label { font-weight: 600; }
+    input { padding: .6rem .8rem; border: 1px solid #ccc; border-radius: .4rem; }
+    button { padding: .6rem .8rem; border: 0; border-radius: .4rem; cursor: pointer; }
+    .row { display: flex; gap: .5rem; }
+    .row button { flex: 1; }
     .ok { color: #0a7f2e; }
     .err { color: #b00020; white-space: pre-wrap; }
     .small { color: #666; font-size: .9rem; }
   </style>
 </head>
 <body>
-  <h1>Test : enregistrer un message dans Supabase</h1>
-  <p class="small">Tape un petit texte, clique “Enregistrer” et vérifie qu’il apparaît dans la liste.</p>
+  <h1>Connexion</h1>
+  <p class="small">Identifiant = <b>admin</b> / Mot de passe = <b>admin</b> (compte par défaut).</p>
 
-  <form id="msg-form">
-    <input id="msg-input" type="text" placeholder="Votre message (1–500 caractères)" maxlength="500" />
-    <button type="submit">Enregistrer</button>
+  <form id="login-form" autocomplete="on">
+    <div>
+      <label for="identifiant">Identifiant</label>
+      <input id="identifiant" name="identifiant" placeholder="ex : admin" required />
+    </div>
+    <div>
+      <label for="password">Mot de passe</label>
+      <input id="password" name="password" type="password" placeholder="Votre mot de passe" required />
+    </div>
+    <div class="row">
+      <button id="btn-login" type="button">Se connecter</button>
+      <button id="btn-signup" type="button">Créer un compte</button>
+    </div>
+    <p id="status"></p>
+    <p class="small">Astuce : si votre identifiant ne contient pas “@”, on utilise automatiquement <code>@local.test</code> (ex. <code>alice</code> → <code>alice@local.test</code>).</p>
   </form>
 
-  <p id="status"></p>
-
-  <h2>Messages enregistrés (les 10 derniers)</h2>
-  <ul id="list"></ul>
-
-  <!-- SDK Supabase (après les <meta>) -->
+  <!-- SDK officiel Supabase côté navigateur -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Ton script applicatif -->
-  <script src="./script.js"></script>
+  <!-- Script d'authentification -->
+  <script src="./auth.js"></script>
 </body>
 </html>
