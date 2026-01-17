@@ -1,4 +1,9 @@
 // Récupération des éléments du DOM
+
+const SUPABASE_URL = "<?php echo getenv('SUPABASE_URL'); ?>";
+const SUPABASE_ANON = "<?php echo getenv('SUPABASE_ANON_KEY'); ?>";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
 const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
 const loginBtn = document.getElementById('loginBtn');
@@ -89,4 +94,5 @@ document.addEventListener('keypress', function(e) {
     if (e.key === 'Enter') {
         login();
     }
+
 });
