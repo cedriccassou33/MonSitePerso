@@ -1,12 +1,20 @@
 
 // =======================
-// script.js
+// script.js (patch)
 // =======================
 
-// 0) Initialisation Supabase
+// 0) Initialisation Supabase (avec options d'auth recommandées)
 const SUPABASE_URL = document.querySelector('meta[name="supabase-url"]').content;
 const SUPABASE_ANON_KEY = document.querySelector('meta[name="supabase-anon"]').content;
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true, // important après redirection OAuth / magic link
+    flowType: 'pkce',         // sans danger si non utilisé, recommandé pour web
+  },
+});
 
 // 1) Références DOM
 const form = document.getElementById('msg-form');
@@ -15,7 +23,7 @@ const list = document.getElementById('list');
 const statusEl = document.getElementById('status');
 const logoutBtn = document.getElementById('logout-btn');
 
-// 2) Helpers
+// 2) Helpers UI
 function setStatus(msg, ok = true) {
   if (!statusEl) return;
   statusEl.className = ok ? 'ok' : 'err';
@@ -58,7 +66,6 @@ function attachFormHandler() {
   });
 }
 
-// [AJOUT] Gestion de la déconnexion
 function attachLogoutHandler() {
   if (!logoutBtn) return;
   logoutBtn.addEventListener('click', async () => {
@@ -68,7 +75,6 @@ function attachLogoutHandler() {
         setStatus(`Erreur déconnexion: ${error.message}`, false);
         return;
       }
-      // Redirige vers la page publique d'accueil
       window.location.href = 'index.html';
     } catch (e) {
       setStatus(`Erreur déconnexion: ${e.message}`, false);
@@ -76,49 +82,74 @@ function attachLogoutHandler() {
   });
 }
 
-// 3) Attente robuste de la session (évite les faux négatifs)
-async function waitForSession(maxTries = 3, delayMs = 250) {
+// 3) Attente robuste de session
+async function waitForSession({ tries = 12, delayMs = 250 } = {}) {
+  // 1) Laisse Supabase consommer l'URL hash (#access_token...) si présent
+  //    (detectSessionInUrl: true s'en charge au premier getSession)
   let { data: { session } } = await db.auth.getSession();
   if (session?.user) return session;
 
-  for (let i = 0; i < maxTries; i++) {
+  // 2) Retente sur une courte fenêtre (3s par défaut)
+  for (let i = 0; i < tries; i++) {
     await new Promise(r => setTimeout(r, delayMs));
     const res = await db.auth.getSession();
     session = res.data.session;
     if (session?.user) return session;
   }
-  const { data: { user } } = await db.auth.getUser();
-  if (user) return { user };
+
+  // 3) Dernier recours : interroger l'API
+  const { data: { user }, error } = await db.auth.getUser();
+  if (user && !error) return { user };
+
   return null;
 }
 
-// 4) Garde d'auth et initialisation UI
-(async () => {
-  const session = await waitForSession();
+// 4) Gestion de l'état d'auth en direct
+db.auth.onAuthStateChange(async (event, _session) => {
+  // Si on reçoit SIGNED_IN juste après la redirection, (ré-)initialise l'UI complète
+  if (event === 'SIGNED_IN') {
+    // Affiche le bouton déconnexion
+    if (logoutBtn) logoutBtn.classList.remove('hidden');
+    // Active le formulaire
+    attachFormHandler();
+    attachLogoutHandler();
+    // Charge les messages
+    await loadMessages();
+    // Nettoie un éventuel message d'attente
+    setStatus('');
+  }
+});
 
-  // Afficher/Masquer le bouton Déconnexion selon l'état d'auth
+// 5) Bootstrap de la page
+(async () => {
+  const hasAccessTokenInHash = location.hash.includes('access_token=');
+
+  if (hasAccessTokenInHash) {
+    // Le SDK va consommer ce hash lors de getSession(); on évite d'afficher "lecture seule" trop vite
+    setStatus('Connexion en cours…', true);
+  }
+
+  const session = await waitForSession({ tries: 12, delayMs: 250 });
+
+  // Afficher/Masquer le bouton Déconnexion
   if (logoutBtn) {
-    if (session?.user) {
-      logoutBtn.classList.remove('hidden');
-    } else {
-      logoutBtn.classList.add('hidden');
-    }
+    if (session?.user) logoutBtn.classList.remove('hidden');
+    else logoutBtn.classList.add('hidden');
   }
 
   if (!session || !session.user) {
     // --- Mode non connecté ---
-    // Option 1 (défaut ici) : rester en lecture seule sur home.html
+    // Par défaut : lecture seule
     setStatus('Vous n’êtes pas connecté·e. Affichage en lecture seule.', false);
-    // Ne pas attacher l’édition si tu veux bloquer l’écriture :
-    // attachFormHandler();  // ← laisse commenté pour bloquer
     await loadMessages();
 
-    // Option 2 : si tu veux forcer la redirection :
+    // Si tu préfères forcer la redirection des non-connectés :
     // window.location.href = 'index.html';
     return;
   }
 
   // --- Connecté ---
+  setStatus('');
   attachFormHandler();
   attachLogoutHandler();
   await loadMessages();
