@@ -86,7 +86,7 @@ async function waitForSession(maxTries = 3, delayMs = 250) {
   //if (!session || !session.user) {
     // Pas de session même après attente → on renvoie vers le login
     //window.location.href = 'home.html';
-    return;
+    //return;
   //}
 
   // Session OK → on attache les handlers et on charge les données
