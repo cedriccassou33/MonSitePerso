@@ -1,8 +1,6 @@
 // Récupère les valeurs depuis les <meta> (démo rapide)
 const SUPABASE_URL = document.querySelector('meta[name="supabase-url"]').content;
 const SUPABASE_ANON_KEY = document.querySelector('meta[name="supabase-anon"]').content;
-const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.__ENV__;
-const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Le CDN expose un global `supabase`
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -62,4 +60,5 @@ form.addEventListener('submit', async (e) => {
 });
 
 loadMessages();
+
 
