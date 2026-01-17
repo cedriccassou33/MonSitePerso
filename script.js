@@ -1,98 +1,62 @@
-// Récupération des éléments du DOM
+// Récupère les valeurs depuis les <meta> (démo rapide)
+const SUPABASE_URL = document.querySelector('meta[name="supabase-url"]').content;
+const SUPABASE_ANON_KEY = document.querySelector('meta[name="supabase-anon"]').content;
 
-const SUPABASE_URL = "<?php echo getenv('SUPABASE_URL'); ?>";
-const SUPABASE_ANON = "<?php echo getenv('SUPABASE_ANON_KEY'); ?>";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+// Le CDN expose un global `supabase`
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-const usernameInput = document.getElementById('username');
-const passwordInput = document.getElementById('password');
-const loginBtn = document.getElementById('loginBtn');
-const registerBtn = document.getElementById('registerBtn');
-const messageDiv = document.getElementById('message');
-const togglePassword = document.getElementById('togglePassword');
+const form = document.getElementById('msg-form');
+const input = document.getElementById('msg-input');
+const list = document.getElementById('list');
+const statusEl = document.getElementById('status');
 
-// Fonction pour afficher/masquer le mot de passe
-togglePassword.addEventListener('click', function() {
-    // Change le type de l'input
-    const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-    passwordInput.setAttribute('type', type);
-    
-    // Change l'icône
-    this.classList.toggle('fa-eye');
-    this.classList.toggle('fa-eye-slash');
+function setStatus(msg, ok = true) {
+  statusEl.className = ok ? 'ok' : 'err';
+  statusEl.textContent = msg;
+}
+
+async function loadMessages() {
+  // SELECT * FROM messages ORDER BY created_at DESC LIMIT 10
+  const { data, error } = await db
+    .from('messages')
+    .select('id, content, created_at')
+    .order('created_at', { ascending: false })
+    .limit(10);
+
+  if (error) {
+    setStatus(`Erreur lecture: ${error.message}`, false);
+    return;
+  }
+  list.innerHTML = '';
+  (data || []).forEach(row => {
+    const li = document.createElement('li');
+    li.textContent = `${new Date(row.created_at).toLocaleString()} — ${row.content}`;
+    list.appendChild(li);
+  });
+}
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const content = input.value.trim();
+  if (!content) {
+    setStatus('Veuillez saisir un texte.', false);
+    return;
+  }
+  if (content.length > 500) {
+    setStatus('500 caractères max.', false);
+    return;
+  }
+
+  // INSERT INTO messages(content) VALUES (...)
+  const { error } = await db.from('messages').insert({ content });
+  if (error) {
+    setStatus(`Erreur insertion: ${error.message}`, false);
+    return;
+  }
+
+  setStatus('Enregistré ✔');
+  input.value = '';
+  await loadMessages();
 });
 
-// Fonction pour afficher un message
-function showMessage(text, type) {
-    messageDiv.textContent = text;
-    messageDiv.className = type;
-    setTimeout(() => {
-        messageDiv.textContent = '';
-        messageDiv.className = '';
-    }, 3000);
-}
-
-// Fonction pour créer un compte
-function createAccount() {
-    const username = usernameInput.value.trim();
-    const password = passwordInput.value.trim();
-    
-    if (!username || !password) {
-        showMessage('Veuillez remplir tous les champs', 'error');
-        return;
-    }
-    
-    // Récupérer les comptes existants
-    let users = JSON.parse(localStorage.getItem('users')) || [];
-    
-    // Vérifier si l'utilisateur existe déjà
-    if (users.find(user => user.username === username)) {
-        showMessage('Cet identifiant existe déjà', 'error');
-        return;
-    }
-    
-    // Ajouter le nouvel utilisateur
-    users.push({ username, password });
-    localStorage.setItem('users', JSON.stringify(users));
-    
-    showMessage('Compte créé avec succès !', 'success');
-    usernameInput.value = '';
-    passwordInput.value = '';
-}
-
-// Fonction pour se connecter
-function login() {
-    const username = usernameInput.value.trim();
-    const password = passwordInput.value.trim();
-    
-    if (!username || !password) {
-        showMessage('Veuillez remplir tous les champs', 'error');
-        return;
-    }
-    
-    // Récupérer les comptes existants
-    const users = JSON.parse(localStorage.getItem('users')) || [];
-    
-    // Vérifier les identifiants
-    const user = users.find(user => user.username === username && user.password === password);
-    
-    if (user) {
-        showMessage('Connexion réussie !', 'success');
-        usernameInput.value = '';
-        passwordInput.value = '';
-    } else {
-        showMessage('Identifiant ou mot de passe incorrect', 'error');
-    }
-}
-
-// Ajout des event listeners
-loginBtn.addEventListener('click', login);
-registerBtn.addEventListener('click', createAccount);
-
-// Permettre la connexion avec la touche Entrée
-document.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        login();
-    }
-
-});
+loadMessages();
