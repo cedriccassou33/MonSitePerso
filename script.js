@@ -13,6 +13,7 @@ const form = document.getElementById('msg-form');
 const input = document.getElementById('msg-input');
 const list = document.getElementById('list');
 const statusEl = document.getElementById('status');
+const logoutBtn = document.getElementById('logout-btn');
 
 // 2) Helpers
 function setStatus(msg, ok = true) {
@@ -33,7 +34,7 @@ async function loadMessages() {
     return;
   }
   list.innerHTML = '';
-  (data || []).forEach(row => {
+  (data ?? []).forEach(row => {
     const li = document.createElement('li');
     li.textContent = `${new Date(row.created_at).toLocaleString()} — ${row.content}`;
     list.appendChild(li);
@@ -41,6 +42,7 @@ async function loadMessages() {
 }
 
 function attachFormHandler() {
+  if (!form) return;
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const content = input.value.trim();
@@ -56,40 +58,68 @@ function attachFormHandler() {
   });
 }
 
-// 3) Attente robuste de la session (évite la redirection trop tôt)
+// [AJOUT] Gestion de la déconnexion
+function attachLogoutHandler() {
+  if (!logoutBtn) return;
+  logoutBtn.addEventListener('click', async () => {
+    try {
+      const { error } = await db.auth.signOut();
+      if (error) {
+        setStatus(`Erreur déconnexion: ${error.message}`, false);
+        return;
+      }
+      // Redirige vers la page publique d'accueil
+      window.location.href = 'index.html';
+    } catch (e) {
+      setStatus(`Erreur déconnexion: ${e.message}`, false);
+    }
+  });
+}
+
+// 3) Attente robuste de la session (évite les faux négatifs)
 async function waitForSession(maxTries = 3, delayMs = 250) {
-  // 1ere tentative
   let { data: { session } } = await db.auth.getSession();
   if (session?.user) return session;
 
-  // En cas de récupération lente, on ré-essaie un court instant
   for (let i = 0; i < maxTries; i++) {
     await new Promise(r => setTimeout(r, delayMs));
     const res = await db.auth.getSession();
     session = res.data.session;
     if (session?.user) return session;
   }
-
-  // Dernière vérification côté serveur (getUser interroge l'API avec le token s'il existe)
   const { data: { user } } = await db.auth.getUser();
-  if (user) {
-    // Si user est là, on construit une session minimale
-    return { user };
-  }
-
+  if (user) return { user };
   return null;
 }
 
-// 4) Garde d'auth : on attend la session, sinon on redirige
+// 4) Garde d'auth et initialisation UI
 (async () => {
   const session = await waitForSession();
-  //if (!session || !session.user) {
-    // Pas de session même après attente → on renvoie vers le login
-    //window.location.href = 'home.html';
-    //return;
-  //}
 
-  // Session OK → on attache les handlers et on charge les données
+  // Afficher/Masquer le bouton Déconnexion selon l'état d'auth
+  if (logoutBtn) {
+    if (session?.user) {
+      logoutBtn.classList.remove('hidden');
+    } else {
+      logoutBtn.classList.add('hidden');
+    }
+  }
+
+  if (!session || !session.user) {
+    // --- Mode non connecté ---
+    // Option 1 (défaut ici) : rester en lecture seule sur home.html
+    setStatus('Vous n’êtes pas connecté·e. Affichage en lecture seule.', false);
+    // Ne pas attacher l’édition si tu veux bloquer l’écriture :
+    // attachFormHandler();  // ← laisse commenté pour bloquer
+    await loadMessages();
+
+    // Option 2 : si tu veux forcer la redirection :
+    // window.location.href = 'index.html';
+    return;
+  }
+
+  // --- Connecté ---
   attachFormHandler();
+  attachLogoutHandler();
   await loadMessages();
 })();
