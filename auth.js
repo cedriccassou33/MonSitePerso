@@ -4,13 +4,13 @@ const SUPABASE_URL = document.querySelector('meta[name="supabase-url"]').content
 const SUPABASE_ANON_KEY = document.querySelector('meta[name="supabase-anon"]').content;
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// 2) Si déjà connecté → aller sur home.html
+/* // 2) Si déjà connecté → aller sur home.html
 (async () => {
   const { data: { session } } = await sb.auth.getSession();
   if (session?.user) {
     window.location.href = 'accueil.html';
   }
-})();
+})(); */
 
 function setStatus(msg, ok = true) {
   const el = document.getElementById('status');
