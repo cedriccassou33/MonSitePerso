@@ -1,9 +1,11 @@
+
+// =======================
 // script.js
+// =======================
 
 // 0) Initialisation Supabase
 const SUPABASE_URL = document.querySelector('meta[name="supabase-url"]').content;
 const SUPABASE_ANON_KEY = document.querySelector('meta[name="supabase-anon"]').content;
-// Le CDN expose un global `supabase`
 const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // 1) Références DOM
@@ -14,12 +16,12 @@ const statusEl = document.getElementById('status');
 
 // 2) Helpers
 function setStatus(msg, ok = true) {
+  if (!statusEl) return;
   statusEl.className = ok ? 'ok' : 'err';
   statusEl.textContent = msg;
 }
 
 async function loadMessages() {
-  // SELECT * FROM messages ORDER BY created_at DESC LIMIT 10
   const { data, error } = await db
     .from('messages')
     .select('id, content, created_at')
@@ -42,21 +44,11 @@ function attachFormHandler() {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const content = input.value.trim();
-    if (!content) {
-      setStatus('Veuillez saisir un texte.', false);
-      return;
-    }
-    if (content.length > 500) {
-      setStatus('500 caractères max.', false);
-      return;
-    }
+    if (!content) return setStatus('Veuillez saisir un texte.', false);
+    if (content.length > 500) return setStatus('500 caractères max.', false);
 
-    // INSERT INTO messages(content) VALUES (...)
     const { error } = await db.from('messages').insert({ content });
-    if (error) {
-      setStatus(`Erreur insertion: ${error.message}`, false);
-      return;
-    }
+    if (error) return setStatus(`Erreur insertion: ${error.message}`, false);
 
     setStatus('Enregistré ✔');
     input.value = '';
@@ -64,17 +56,40 @@ function attachFormHandler() {
   });
 }
 
-// 3) Garde d'authentification : si non connecté → redirection vers login.html
-(async () => {
-  const { data: { session }, error } = await db.auth.getSession();
+// 3) Attente robuste de la session (évite la redirection trop tôt)
+async function waitForSession(maxTries = 3, delayMs = 250) {
+  // 1ere tentative
+  let { data: { session } } = await db.auth.getSession();
+  if (session?.user) return session;
 
-  // En cas d'erreur API, on redirige aussi (pour forcer une authentification propre)
-  if (error || !session || !session.user) {
+  // En cas de récupération lente, on ré-essaie un court instant
+  for (let i = 0; i < maxTries; i++) {
+    await new Promise(r => setTimeout(r, delayMs));
+    const res = await db.auth.getSession();
+    session = res.data.session;
+    if (session?.user) return session;
+  }
+
+  // Dernière vérification côté serveur (getUser interroge l'API avec le token s'il existe)
+  const { data: { user } } = await db.auth.getUser();
+  if (user) {
+    // Si user est là, on construit une session minimale
+    return { user };
+  }
+
+  return null;
+}
+
+// 4) Garde d'auth : on attend la session, sinon on redirige
+(async () => {
+  const session = await waitForSession();
+  if (!session || !session.user) {
+    // Pas de session même après attente → on renvoie vers le login
     window.location.href = 'login.html';
     return;
   }
 
-  // L'utilisateur est authentifié → on attache les handlers et on charge les données
+  // Session OK → on attache les handlers et on charge les données
   attachFormHandler();
   await loadMessages();
 })();
