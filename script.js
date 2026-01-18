@@ -1,3 +1,5 @@
+
+// script.js
 // =======================
 // script.js
 // =======================
@@ -12,6 +14,7 @@ const form = document.getElementById('msg-form');
 const input = document.getElementById('msg-input');
 const list = document.getElementById('list');
 const statusEl = document.getElementById('status');
+const logoutBtn = document.getElementById('logout-btn');
 
 // 2) Helpers
 function setStatus(msg, ok = true) {
@@ -32,7 +35,7 @@ async function loadMessages() {
     return;
   }
   list.innerHTML = '';
-  (data || []).forEach(row => {
+  (data ?? []).forEach(row => {
     const li = document.createElement('li');
     li.textContent = `${new Date(row.created_at).toLocaleString()} — ${row.content}`;
     list.appendChild(li);
@@ -55,6 +58,20 @@ function attachFormHandler() {
   });
 }
 
+// Déconnexion + redirection vers index.html
+async function handleLogout() {
+  try {
+    await db.auth.signOut();
+  } catch (_) {
+    // on ignore l'erreur de signOut pour garantir la sortie de l'app côté client
+  } finally {
+    window.location.href = 'index.html';
+  }
+}
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', handleLogout);
+}
+
 // 3) Attente robuste de la session (évite la redirection trop tôt)
 async function waitForSession(maxTries = 3, delayMs = 250) {
   // 1ere tentative
@@ -75,7 +92,6 @@ async function waitForSession(maxTries = 3, delayMs = 250) {
     // Si user est là, on construit une session minimale
     return { user };
   }
-
   return null;
 }
 
@@ -83,11 +99,10 @@ async function waitForSession(maxTries = 3, delayMs = 250) {
 (async () => {
   const session = await waitForSession();
   //if (!session || !session.user) {
-    // Pas de session même après attente → on renvoie vers le login
-    //window.location.href = 'home.html';
-    //return;
+  //  // Pas de session même après attente → on renvoie vers le login
+  //  window.location.href = 'index.html';
+  //  return;
   //}
-
   // Session OK → on attache les handlers et on charge les données
   attachFormHandler();
   await loadMessages();
