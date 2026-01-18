@@ -39,7 +39,6 @@ async function loadMessages() {
   });
 }
 
-
 function attachFormHandler() {
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
