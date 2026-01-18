@@ -8,7 +8,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 (async () => {
   const { data: { session } } = await sb.auth.getSession();
   if (session?.user) {
-    window.location.href = 'accueil.html';
+    window.location.href = 'home.html';
   }
 })();
 
