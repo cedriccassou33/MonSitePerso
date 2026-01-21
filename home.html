@@ -1,10 +1,10 @@
+
 <!doctype html>
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
   <title>Mini test Supabase</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-
   <!-- ⚠️ Remplace par tes vraies valeurs (MÊMES que dans login.html) -->
   <meta name="supabase-url" content="https://axlzgvfbmqjwvmmzpimr.supabase.co">
   <meta name="supabase-anon" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4bHpndmZibXFqd3ZtbXpwaW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MDI3NjQsImV4cCI6MjA4NDA3ODc2NH0.7S7PbON5F_FH2x2Ashd1-9XU6JW2qYMZ482uv0m4kFI">
@@ -19,10 +19,25 @@
     .ok { color: #0a7f2e; }
     .err { color: #b00020; white-space: pre-wrap; }
     .small { color: #666; font-size: .9rem; }
+
+    /* Barre d’actions en haut à droite */
+    .actions-bar {
+      display: flex;
+      gap: .5rem;
+      justify-content: flex-end;
+      margin: .5rem 0 1rem;
+    }
   </style>
 </head>
 <body>
   <h1>Test : enregistrer un message dans Supabase</h1>
+
+  <!-- 👉 Barre d’actions -->
+  <div class="actions-bar">
+    <button id="actions-btn" type="button">Actions</button>
+    <button id="logout-btn" type="button">Déconnexion</button>
+  </div>
+
   <p class="small">Tape un petit texte, clique “Enregistrer” et vérifie qu’il apparaît dans la liste.</p>
 
   <form id="msg-form">

@@ -1,3 +1,4 @@
+
 // =======================
 // script.js
 // =======================
@@ -12,6 +13,10 @@ const form = document.getElementById('msg-form');
 const input = document.getElementById('msg-input');
 const list = document.getElementById('list');
 const statusEl = document.getElementById('status');
+
+// 👉 Nouveaux boutons
+const logoutBtn = document.getElementById('logout-btn');
+const actionsBtn = document.getElementById('actions-btn');
 
 // 2) Helpers
 function setStatus(msg, ok = true) {
@@ -31,8 +36,9 @@ async function loadMessages() {
     setStatus(`Erreur lecture: ${error.message}`, false);
     return;
   }
+
   list.innerHTML = '';
-  (data || []).forEach(row => {
+  (data ?? []).forEach(row => {
     const li = document.createElement('li');
     li.textContent = `${new Date(row.created_at).toLocaleString()} — ${row.content}`;
     list.appendChild(li);
@@ -55,9 +61,33 @@ function attachFormHandler() {
   });
 }
 
+// 👉 Attache les handlers de boutons
+function attachActionButtons() {
+  if (actionsBtn) {
+    actionsBtn.addEventListener('click', () => {
+      // Redirection vers la page actions
+      window.location.href = 'actions.html';
+    });
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await db.auth.signOut(); // Déconnecte l'utilisateur
+      } catch (e) {
+        // Même en cas d'échec réseau, on force la navigation
+        console.warn('Erreur signOut:', e);
+      } finally {
+        // Redirige vers la page d'accueil (index.html)
+        window.location.href = 'index.html';
+      }
+    });
+  }
+}
+
 // 3) Attente robuste de la session (évite la redirection trop tôt)
 async function waitForSession(maxTries = 3, delayMs = 250) {
-  // 1ere tentative
+  // 1ère tentative
   let { data: { session } } = await db.auth.getSession();
   if (session?.user) return session;
 
@@ -69,26 +99,27 @@ async function waitForSession(maxTries = 3, delayMs = 250) {
     if (session?.user) return session;
   }
 
-  // Dernière vérification côté serveur (getUser interroge l'API avec le token s'il existe)
+  // Dernière vérification côté serveur
   const { data: { user } } = await db.auth.getUser();
   if (user) {
     // Si user est là, on construit une session minimale
     return { user };
   }
-
   return null;
 }
 
-// 4) Garde d'auth : on attend la session, sinon on redirige
+// 4) Garde d'auth : on attend la session, sinon on redirige (optionnel)
 (async () => {
   const session = await waitForSession();
-  //if (!session || !session.user) {
-    // Pas de session même après attente → on renvoie vers le login
-    //window.location.href = 'home.html';
-    //return;
-  //}
+
+  // Si tu veux protéger la page, décommente :
+  // if (!session || !session.user) {
+  //   window.location.href = 'index.html';
+  //   return;
+  // }
 
   // Session OK → on attache les handlers et on charge les données
   attachFormHandler();
+  attachActionButtons(); // ← attache les nouveaux boutons
   await loadMessages();
 })();
