@@ -2,14 +2,17 @@
 // ====== CONFIG SUPABASE ======
 const SUPABASE_URL = "https://axlzgvfbmqjwvmmzpimr.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4bHpndmZibXFqd3ZtbXpwaW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MDI3NjQsImV4cCI6MjA4NDA3ODc2NH0.7S7PbON5F_FH2x2Ashd1-9XU6JW2qYMZ482uv0m4kFI";
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error("❌ Supabase URL/Anon key manquants dans app.js");
+}
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ====== STATE ======
 let currentUser = null;
-let cache = [];          // toutes les actions récupérées
-let filtered = [];       // vue filtrée + triée
+let cache = [];      // toutes les actions
+let filtered = [];   // vue filtrée+triée
 
-// ====== SHORTCUTS / UTILS ======
+// ====== UTILS ======
 const $ = (sel) => document.querySelector(sel);
 const show = (el) => el.classList.remove('hidden');
 const hide = (el) => el.classList.add('hidden');
@@ -20,42 +23,34 @@ function escapeHtml(s) {
     .replaceAll('>','&gt;').replaceAll('"','&quot;')
     .replaceAll("'","&#039;");
 }
-
 function formatDate(dt) {
   if (!dt) return '—';
   try {
     const d = new Date(dt);
     return d.toLocaleString(undefined, {
-      year:'numeric', month:'2-digit', day:'2-digit',
-      hour:'2-digit', minute:'2-digit'
+      year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'
     });
   } catch { return '—'; }
 }
-
 function toLocalInputValue(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   const tzOffset = d.getTimezoneOffset() * 60000;
-  const local = new Date(d - tzOffset).toISOString().slice(0,16);
-  return local;
+  return new Date(d - tzOffset).toISOString().slice(0,16);
 }
-
 function toTimestamptz(inputEl) {
   const v = inputEl.value?.trim();
   if (!v) return null;
-  return new Date(v).toISOString(); // converti en UTC
+  return new Date(v).toISOString(); // UTC
 }
-
 function chipEtat(etat) {
   const map = { "à faire":"etat-afaire", "en cours":"etat-encours", "fait":"etat-fait", "annulé":"etat-annule" };
   return `<span class="chip ${map[etat] || ''}">${etat}</span>`;
 }
-
 function chipPrio(p) {
   const map = { faible:"prio-faible", moyenne:"prio-moyenne", haute:"prio-haute" };
   return `<span class="chip ${map[p] || ''}">${p}</span>`;
 }
-
 function roleBadge(row) {
   const amAuthor = row.auteur_id === currentUser.id;
   const amResp = row.responsable_id === currentUser.id;
@@ -65,7 +60,6 @@ function roleBadge(row) {
   if (!parts.length) parts.push('<span class="chip">—</span>');
   return parts.join(' ');
 }
-
 function setStatus(msg, ok = true, where = 'list') {
   const el = where === 'create' ? $('#createMsg') : where === 'edit' ? $('#editMsg') : $('#listMsg');
   el.innerHTML = msg ? `<div class="${ok ? 'success':'error'}">${msg}</div>` : '';
@@ -73,17 +67,26 @@ function setStatus(msg, ok = true, where = 'list') {
 
 // ====== INIT ======
 (async function init() {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error || !user) {
-    window.location.href = '/login.html';
-    return;
-  }
-  currentUser = user;
-  $('#userInfo').textContent = user.email || user.id;
+  try {
+    const { data: { user }, error } = await supabase.auth.getUser();
+    if (error) {
+      console.error('auth.getUser error:', error);
+    }
+    if (!user) {
+      // Non connecté -> redirection
+      window.location.href = '/login.html';
+      return;
+    }
+    currentUser = user;
+    $('#userInfo').textContent = user.email || user.id;
 
-  bindUI();
-  await loadActions();
-  subscribeRealtime();
+    bindUI();
+    await loadActions();
+    subscribeRealtime();
+  } catch (e) {
+    console.error('Init fatal error:', e);
+    setStatus('Erreur d’initialisation', false, 'list');
+  }
 })();
 
 // ====== REALTIME ======
@@ -97,7 +100,10 @@ function subscribeRealtime() {
         loadActions();
       }
     })
-    .subscribe();
+    .subscribe((status) => {
+      // Debug
+      // console.log('Realtime status', status);
+    });
 }
 
 // ====== LOAD / FILTER / SORT / RENDER ======
@@ -107,8 +113,8 @@ async function loadActions() {
     .from('actions')
     .select('*')
     .or(`auteur_id.eq.${currentUser.id},responsable_id.eq.${currentUser.id}`);
-
   if (error) {
+    console.error('Load actions error:', error);
     setStatus(`Erreur de chargement : ${error.message}`, false, 'list');
     return;
   }
@@ -122,23 +128,18 @@ function applyFiltersAndRender() {
   const sortField = $('#sortField').value;
   const asc = $('#sortDir').value === 'asc';
 
-  // Filter
   filtered = cache.filter(r => {
     const okEtat = (fEtat === 'all') || (r.etat === fEtat);
     const okPrio = (fPrio === 'all') || (r.priorite === fPrio);
     return okEtat && okPrio;
   });
 
-  // Sort
   filtered.sort((a,b) => {
     const va = a[sortField], vb = b[sortField];
-    // handle nulls
     if (va == null && vb != null) return asc ? -1 : 1;
     if (va != null && vb == null) return asc ? 1 : -1;
     if (va == null && vb == null) return 0;
-
-    // dates & strings
-    if (sortField === 'echeance' || sortField === 'created_at' || sortField === 'updated_at') {
+    if (['echeance','created_at','updated_at'].includes(sortField)) {
       const da = new Date(va).getTime(), db = new Date(vb).getTime();
       return asc ? (da - db) : (db - da);
     }
@@ -214,20 +215,17 @@ function bindUI() {
   });
   $('#editForm').addEventListener('submit', onSaveEdit);
 
-  // Délégation d'événements pour Edit/Delete
+  // Délégation d'événements Edit/Delete
   $('#tbody').addEventListener('click', (e) => {
     const btn = e.target.closest('button');
     if (!btn) return;
     const id = btn.dataset.id;
-    if (btn.classList.contains('btn-edit')) {
-      onEdit(id);
-    } else if (btn.classList.contains('btn-del')) {
-      onDelete(id);
-    }
+    if (btn.classList.contains('btn-edit')) onEdit(id);
+    if (btn.classList.contains('btn-del')) onDelete(id);
   });
 }
 
-// ====== CREATE ======
+// ====== CREATE (RPC + fallback direct insert) ======
 async function onCreate(e) {
   e.preventDefault();
   setStatus('', true, 'create');
@@ -240,22 +238,51 @@ async function onCreate(e) {
   let responsable_id = currentUser.id;
   if ($('#c_responsable_mode').value === 'uuid') {
     const uuid = $('#c_responsable_uuid').value.trim();
-    if (!uuid) return setStatus('UUID responsable requis.', false, 'create');
+    if (!uuid) {
+      setStatus('UUID responsable requis.', false, 'create');
+      return;
+    }
     responsable_id = uuid;
   }
 
-  const { data, error } = await supabase.rpc('create_action', {
-    p_responsable_id: responsable_id,
-    p_description: description,
-    p_etat: etat,
-    p_priorite: priorite,
-    p_echeance: echeance
-  });
-
-  if (error) {
-    setStatus(`Erreur de création : ${error.message}`, false, 'create');
-    return;
+  // 1) Tenter le RPC
+  let ok = false;
+  let errMsg = '';
+  try {
+    const { data, error } = await supabase.rpc('create_action', {
+      p_responsable_id: responsable_id,
+      p_description: description,
+      p_etat: etat,
+      p_priorite: priorite,
+      p_echeance: echeance
+    });
+    if (error) throw error;
+    ok = true;
+  } catch (err) {
+    console.warn('RPC create_action a échoué, fallback direct insert →', err);
+    errMsg = err?.message || String(err);
   }
+
+  // 2) Fallback : insertion directe (RLS autorise si authentifié)
+  if (!ok) {
+    try {
+      const { error: insErr } = await supabase.from('actions').insert([{
+        auteur_id: currentUser.id,             // RLS: doit == auth.uid()
+        responsable_id,
+        description,
+        etat,
+        priorite,
+        echeance
+      }]);
+      if (insErr) throw insErr;
+      ok = true;
+    } catch (err2) {
+      console.error('Insert direct error:', err2);
+      setStatus(`Erreur de création : ${errMsg || ''} ${err2?.message || ''}`.trim(), false, 'create');
+      return;
+    }
+  }
+
   setStatus('Action créée ✅', true, 'create');
   $('#resetCreate').click();
   await loadActions();
@@ -265,7 +292,6 @@ async function onCreate(e) {
 function onEdit(id) {
   const row = cache.find(x => x.id === id);
   if (!row) return;
-
   $('#e_id').value = row.id;
   $('#e_description').value = row.description || '';
   $('#e_priorite').value = row.priorite || 'moyenne';
@@ -274,7 +300,6 @@ function onEdit(id) {
   $('#e_responsable_mode').value = 'keep';
   $('#e_responsable_uuid').value = '';
   hide($('#e_responsable_uuid_wrap'));
-
   setStatus('', true, 'edit');
   showModal();
 }
@@ -292,9 +317,8 @@ async function onSaveEdit(e) {
   const upd = { description, priorite, etat, echeance };
 
   const mode = $('#e_responsable_mode').value;
-  if (mode === 'me') {
-    upd.responsable_id = currentUser.id;
-  } else if (mode === 'uuid') {
+  if (mode === 'me') upd.responsable_id = currentUser.id;
+  else if (mode === 'uuid') {
     const uuid = $('#e_responsable_uuid').value.trim();
     if (!uuid) return setStatus('UUID responsable requis.', false, 'edit');
     upd.responsable_id = uuid;
@@ -302,6 +326,7 @@ async function onSaveEdit(e) {
 
   const { error } = await supabase.from('actions').update(upd).eq('id', id);
   if (error) {
+    console.error('Update error:', error);
     setStatus(`Erreur de mise à jour : ${error.message}`, false, 'edit');
     return;
   }
@@ -319,6 +344,7 @@ async function onDelete(id) {
 
   const { error } = await supabase.from('actions').delete().eq('id', id);
   if (error) {
+    console.error('Delete error:', error);
     alert('Erreur de suppression : ' + error.message);
     return;
   }
@@ -334,14 +360,11 @@ function onExportCsv() {
   }
   const headers = ['id','description','etat','priorite','echeance','created_at','updated_at','role'];
   const esc = (v) => {
-    const s = String(v ?? '');
-    // échapper " et transformer CR/LF
-    const q = s.replaceAll('"','""').replaceAll('\r',' ').replaceAll('\n',' ');
-    return `"${q}"`;
+    const s = String(v ?? '').replaceAll('"','""').replaceAll('\r',' ').replaceAll('\n',' ');
+    return `"${s}"`;
   };
 
-  const csvLines = [];
-  csvLines.push(headers.join(','));
+  const csvLines = [headers.join(',')];
   rows.forEach(r => {
     const role = (r.auteur_id === currentUser.id ? 'auteur' : '')
                + (r.responsable_id === currentUser.id ? (r.auteur_id === currentUser.id ? ' & ' : '') + 'responsable' : '');
