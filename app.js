@@ -6,8 +6,8 @@ const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ====== STATE ======
 let currentUser = null;
-let cache = [];          // toutes les actions récupérées
-let filtered = [];       // vue filtrée + triée
+let cache = [];     // toutes les actions récupérées
+let filtered = [];  // vue filtrée + triée
 
 // ====== SHORTCUTS / UTILS ======
 const $ = (sel) => document.querySelector(sel);
@@ -16,9 +16,11 @@ const hide = (el) => el.classList.add('hidden');
 
 function escapeHtml(s) {
   return String(s ?? '')
-    .replaceAll('&','&amp;').replaceAll('<','&lt;')
-    .replaceAll('>','&gt;').replaceAll('"','&quot;')
-    .replaceAll("'","&#039;");
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
 }
 
 function formatDate(dt) {
@@ -26,17 +28,19 @@ function formatDate(dt) {
   try {
     const d = new Date(dt);
     return d.toLocaleString(undefined, {
-      year:'numeric', month:'2-digit', day:'2-digit',
-      hour:'2-digit', minute:'2-digit'
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit'
     });
-  } catch { return '—'; }
+  } catch {
+    return '—';
+  }
 }
 
 function toLocalInputValue(iso) {
   if (!iso) return '';
   const d = new Date(iso);
   const tzOffset = d.getTimezoneOffset() * 60000;
-  const local = new Date(d - tzOffset).toISOString().slice(0,16);
+  const local = new Date(d - tzOffset).toISOString().slice(0, 16);
   return local;
 }
 
@@ -47,28 +51,75 @@ function toTimestamptz(inputEl) {
 }
 
 function chipEtat(etat) {
-  const map = { "à faire":"etat-afaire", "en cours":"etat-encours", "fait":"etat-fait", "annulé":"etat-annule" };
-  return `<span class="chip ${map[etat] || ''}">${etat}</span>`;
+  const map = { "à faire": "etat-afaire", "en cours": "etat-encours", "fait": "etat-fait", "annulé": "etat-annule" };
+  const cls = map[etat] ?? '';
+  return `<span class="chip ${cls}">${escapeHtml(etat)}</span>`;
 }
 
 function chipPrio(p) {
-  const map = { faible:"prio-faible", moyenne:"prio-moyenne", haute:"prio-haute" };
-  return `<span class="chip ${map[p] || ''}">${p}</span>`;
+  const map = { faible: "prio-faible", moyenne: "prio-moyenne", haute: "prio-haute" };
+  const cls = map[p] ?? '';
+  return `<span class="chip ${cls}">${escapeHtml(p)}</span>`;
 }
 
 function roleBadge(row) {
   const amAuthor = row.auteur_id === currentUser.id;
   const amResp = row.responsable_id === currentUser.id;
   let parts = [];
-  if (amAuthor) parts.push('<span class="chip">Auteur: moi</span>');
-  if (amResp) parts.push('<span class="chip">Responsable: moi</span>');
-  if (!parts.length) parts.push('<span class="chip">—</span>');
+  if (amAuthor) parts.push('Auteur: moi');
+  if (amResp) parts.push('Responsable: moi');
+  if (!parts.length) parts.push('—');
   return parts.join(' ');
 }
 
 function setStatus(msg, ok = true, where = 'list') {
   const el = where === 'create' ? $('#createMsg') : where === 'edit' ? $('#editMsg') : $('#listMsg');
-  el.innerHTML = msg ? `<div class="${ok ? 'success':'error'}">${msg}</div>` : '';
+  el.innerHTML = msg ? `\n${msg}\n` : '';
+}
+
+// ====== DB HEALTHCHECK (table actions) ======
+async function testActionsTable() {
+  const el = document.querySelector('#dbHealth');
+  if (!el) return;
+
+  el.innerHTML = `Test connexion table <b>actions</b> : <span class="muted">en cours…</span>`;
+
+  try {
+    const { data, error } = await supabase
+      .from('actions')
+      .select('id, created_at')
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (error) {
+      el.innerHTML = `
+        Test connexion table <b>actions</b> : <span style="color:#b42318;">KO ❌</span>
+        <div class="hint">Erreur: ${escapeHtml(error.message)}</div>
+      `;
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const row = data[0];
+      el.innerHTML = `
+        Table <b>actions</b> opérationnelle ✅
+        <div class="hint">
+          Preuve: dernière ligne visible → <code>${escapeHtml(row.id)}</code>
+          (créée le ${escapeHtml(formatDate(row.created_at))})
+        </div>
+      `;
+    } else {
+      el.innerHTML = `
+        Table <b>actions</b> opérationnelle ✅
+        <div class="hint">Preuve: lecture OK, mais aucune ligne visible (0 résultat).</div>
+      `;
+    }
+  } catch (e) {
+    el.innerHTML = `
+      Test connexion table <b>actions</b> : <span style="color:#b42318;">KO ❌</span>
+      <div class="hint">Exception: ${escapeHtml(e?.message || String(e))}</div>
+    `;
+  }
 }
 
 // ====== INIT ======
@@ -79,9 +130,13 @@ function setStatus(msg, ok = true, where = 'list') {
     return;
   }
   currentUser = user;
-  $('#userInfo').textContent = user.email || user.id;
+  $('#userInfo').textContent = user.email ?? user.id;
 
   bindUI();
+
+  // ✅ Nouveau : test simple que la table répond
+  await testActionsTable();
+
   await loadActions();
   subscribeRealtime();
 })();
@@ -91,7 +146,7 @@ function subscribeRealtime() {
   supabase
     .channel('public:actions')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'actions' }, (payload) => {
-      const r = payload.new || payload.old || {};
+      const r = payload.new ?? payload.old ?? {};
       if (!r) return;
       if (r.auteur_id === currentUser.id || r.responsable_id === currentUser.id) {
         loadActions();
@@ -112,7 +167,7 @@ async function loadActions() {
     setStatus(`Erreur de chargement : ${error.message}`, false, 'list');
     return;
   }
-  cache = data || [];
+  cache = data ?? [];
   applyFiltersAndRender();
 }
 
@@ -130,8 +185,9 @@ function applyFiltersAndRender() {
   });
 
   // Sort
-  filtered.sort((a,b) => {
+  filtered.sort((a, b) => {
     const va = a[sortField], vb = b[sortField];
+
     // handle nulls
     if (va == null && vb != null) return asc ? -1 : 1;
     if (va != null && vb == null) return asc ? 1 : -1;
@@ -159,20 +215,23 @@ function renderTable(rows) {
     tbody.innerHTML = `<tr><td colspan="5" class="muted">Aucune action</td></tr>`;
     return;
   }
+
   tbody.innerHTML = rows.map(r => {
-    return `<tr data-id="${r.id}">
-      <td>
-        <div>${escapeHtml(r.description || '')}</div>
-        <div class="muted">Créée: ${formatDate(r.created_at)} • MAJ: ${formatDate(r.updated_at)}</div>
-      </td>
-      <td><div class="chips">${chipEtat(r.etat)} ${chipPrio(r.priorite)}</div></td>
-      <td>${formatDate(r.echeance)}</td>
-      <td>${roleBadge(r)}</td>
-      <td>
-        <button class="ghost btn-edit" data-id="${r.id}">Modifier</button>
-        <button class="danger btn-del" data-id="${r.id}">Supprimer</button>
-      </td>
-    </tr>`;
+    return `
+      <tr>
+        <td>
+          <div class="strong">${escapeHtml(r.description ?? '')}</div>
+          <div class="muted">Créée: ${formatDate(r.created_at)} • MAJ: ${formatDate(r.updated_at)}</div>
+        </td>
+        <td>${chipEtat(r.etat)} ${chipPrio(r.priorite)}</td>
+        <td>${formatDate(r.echeance)}</td>
+        <td>${escapeHtml(roleBadge(r))}</td>
+        <td>
+          <button class="ghost btn-edit" data-id="${escapeHtml(r.id)}">Modifier</button>
+          <button class="ghost btn-del" data-id="${escapeHtml(r.id)}">Supprimer</button>
+        </td>
+      </tr>
+    `;
   }).join('');
 }
 
@@ -208,10 +267,12 @@ function bindUI() {
 
   // Edition (modal)
   $('#closeEdit').addEventListener('click', hideModal);
+
   $('#e_responsable_mode').addEventListener('change', () => {
     if ($('#e_responsable_mode').value === 'uuid') show($('#e_responsable_uuid_wrap'));
     else hide($('#e_responsable_uuid_wrap'));
   });
+
   $('#editForm').addEventListener('submit', onSaveEdit);
 
   // Délégation d'événements pour Edit/Delete
@@ -256,6 +317,7 @@ async function onCreate(e) {
     setStatus(`Erreur de création : ${error.message}`, false, 'create');
     return;
   }
+
   setStatus('Action créée ✅', true, 'create');
   $('#resetCreate').click();
   await loadActions();
@@ -267,10 +329,11 @@ function onEdit(id) {
   if (!row) return;
 
   $('#e_id').value = row.id;
-  $('#e_description').value = row.description || '';
-  $('#e_priorite').value = row.priorite || 'moyenne';
-  $('#e_etat').value = row.etat || 'à faire';
+  $('#e_description').value = row.description ?? '';
+  $('#e_priorite').value = row.priorite ?? 'moyenne';
+  $('#e_etat').value = row.etat ?? 'à faire';
   $('#e_echeance').value = toLocalInputValue(row.echeance);
+
   $('#e_responsable_mode').value = 'keep';
   $('#e_responsable_uuid').value = '';
   hide($('#e_responsable_uuid_wrap'));
@@ -305,6 +368,7 @@ async function onSaveEdit(e) {
     setStatus(`Erreur de mise à jour : ${error.message}`, false, 'edit');
     return;
   }
+
   setStatus('Action mise à jour ✅', true, 'edit');
   hideModal();
   await loadActions();
@@ -313,7 +377,7 @@ async function onSaveEdit(e) {
 // ====== DELETE ======
 async function onDelete(id) {
   const row = cache.find(x => x.id === id);
-  const short = row?.description?.slice(0, 80) || id;
+  const short = row?.description?.slice(0, 80) ?? id;
   const ok = confirm(`Supprimer cette action ?\n\n${short}\n\nCette opération est irréversible.`);
   if (!ok) return;
 
@@ -332,35 +396,38 @@ function onExportCsv() {
     alert('Aucune ligne à exporter.');
     return;
   }
-  const headers = ['id','description','etat','priorite','echeance','created_at','updated_at','role'];
+
+  const headers = ['id', 'description', 'etat', 'priorite', 'echeance', 'created_at', 'updated_at', 'role'];
   const esc = (v) => {
     const s = String(v ?? '');
-    // échapper " et transformer CR/LF
-    const q = s.replaceAll('"','""').replaceAll('\r',' ').replaceAll('\n',' ');
+    const q = s.replaceAll('"', '""').replaceAll('\r', ' ').replaceAll('\n', ' ');
     return `"${q}"`;
   };
 
   const csvLines = [];
   csvLines.push(headers.join(','));
+
   rows.forEach(r => {
-    const role = (r.auteur_id === currentUser.id ? 'auteur' : '')
-               + (r.responsable_id === currentUser.id ? (r.auteur_id === currentUser.id ? ' & ' : '') + 'responsable' : '');
+    const role =
+      (r.auteur_id === currentUser.id ? 'auteur' : '') +
+      (r.responsable_id === currentUser.id ? ((r.auteur_id === currentUser.id ? ' & ' : '') + 'responsable') : '');
+
     csvLines.push([
       r.id,
       esc(r.description),
       r.etat,
       r.priorite,
-      r.echeance || '',
-      r.created_at || '',
-      r.updated_at || '',
-      role || ''
+      r.echeance ?? '',
+      r.created_at ?? '',
+      r.updated_at ?? '',
+      role ?? ''
     ].join(','));
   });
 
   const blob = new Blob([csvLines.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  const ts = new Date().toISOString().replaceAll(':','-');
+  const ts = new Date().toISOString().replaceAll(':', '-');
   a.href = url;
   a.download = `actions_${ts}.csv`;
   document.body.appendChild(a);
@@ -370,5 +437,12 @@ function onExportCsv() {
 }
 
 // ====== MODAL HELPERS ======
-function showModal() { $('#editModal').style.display = 'flex'; $('#editModal').setAttribute('aria-hidden','false'); }
-function hideModal() { $('#editModal').style.display = 'none'; $('#editModal').setAttribute('aria-hidden','true'); }
+function showModal() {
+  $('#editModal').style.display = 'flex';
+  $('#editModal').setAttribute('aria-hidden', 'false');
+}
+
+function hideModal() {
+  $('#editModal').style.display = 'none';
+  $('#editModal').setAttribute('aria-hidden', 'true');
+}

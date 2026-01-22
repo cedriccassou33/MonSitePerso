@@ -11,6 +11,11 @@
   <header class="app-header">
     <h1>Actions</h1>
     <div id="userInfo" class="muted">Chargement…</div>
+
+    <!-- ✅ Test connexion table actions -->
+    <div id="dbHealth" class="muted">
+      Test connexion table <b>actions</b> : <span class="muted">en cours…</span>
+    </div>
   </header>
 
   <main class="container grid">
@@ -26,7 +31,6 @@
             <label for="c_description">Description</label>
             <textarea id="c_description" required placeholder="Ex.: Préparer le plan de maintenance Q1…"></textarea>
           </div>
-
           <div class="row">
             <div class="field">
               <label for="c_priorite">Priorité</label>
@@ -46,7 +50,6 @@
               </select>
             </div>
           </div>
-
           <div class="row">
             <div class="field">
               <label for="c_echeance">Échéance</label>
@@ -65,7 +68,6 @@
               </div>
             </div>
           </div>
-
           <div class="actions">
             <button type="button" class="ghost" id="resetCreate">Réinitialiser</button>
             <button type="submit" class="primary">Créer</button>
@@ -93,9 +95,7 @@
             <option value="moyenne">moyenne</option>
             <option value="haute">haute</option>
           </select>
-
           <span class="divider"></span>
-
           <label class="muted">Trier</label>
           <select id="sortField" title="Champ de tri">
             <option value="echeance">Échéance</option>
@@ -108,9 +108,7 @@
             <option value="asc">Asc.</option>
             <option value="desc">Desc.</option>
           </select>
-
           <span class="spacer"></span>
-
           <button id="exportCsvBtn" class="ghost" title="Exporter la vue filtrée">Exporter CSV</button>
           <button id="refreshBtn" class="ghost" title="Rafraîchir">Rafraîchir</button>
         </div>
@@ -130,6 +128,7 @@
           <tbody id="tbody"></tbody>
         </table>
       </div>
+
       <div class="card-body">
         <div id="listMsg" class="statusbar">—</div>
       </div>
@@ -199,4 +198,3 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./app.js"></script>
 </body>
-</html>
