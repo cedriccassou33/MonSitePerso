@@ -12,7 +12,6 @@
     <h1>Actions</h1>
     <div id="userInfo" class="muted">Chargement…</div>
 
-    <!-- ✅ Test connexion table actions -->
     <div id="dbHealth" class="muted">
       Test connexion table <b>actions</b> : <span class="muted">en cours…</span>
     </div>
@@ -31,6 +30,7 @@
             <label for="c_description">Description</label>
             <textarea id="c_description" required placeholder="Ex.: Préparer le plan de maintenance Q1…"></textarea>
           </div>
+
           <div class="row">
             <div class="field">
               <label for="c_priorite">Priorité</label>
@@ -50,24 +50,28 @@
               </select>
             </div>
           </div>
+
           <div class="row">
             <div class="field">
               <label for="c_echeance">Échéance</label>
               <input type="datetime-local" id="c_echeance" />
               <div class="hint">Optionnel — stockée en UTC</div>
             </div>
+
             <div class="field">
               <label for="c_responsable_mode">Responsable</label>
               <select id="c_responsable_mode">
                 <option value="me" selected>Moi</option>
                 <option value="uuid">UUID spécifique</option>
               </select>
+
               <div id="c_responsable_uuid_wrap" class="field hidden" style="margin-top:8px;">
                 <input type="text" id="c_responsable_uuid" placeholder="UUID du responsable (xxxxxxxx-....)" />
                 <div class="hint">Laissez “Moi” si vous êtes le responsable.</div>
               </div>
             </div>
           </div>
+
           <div class="actions">
             <button type="button" class="ghost" id="resetCreate">Réinitialiser</button>
             <button type="submit" class="primary">Créer</button>
@@ -80,8 +84,10 @@
     <section class="card list-card">
       <div class="card-header">
         <h2>Mes actions (auteur ou responsable)</h2>
+
         <div class="toolbar">
           <label class="muted">Filtrer</label>
+
           <select id="filterEtat" title="Filtrer par état">
             <option value="all" selected>État : Tous</option>
             <option value="à faire">à faire</option>
@@ -89,13 +95,16 @@
             <option value="fait">fait</option>
             <option value="annulé">annulé</option>
           </select>
+
           <select id="filterPriorite" title="Filtrer par priorité">
             <option value="all" selected>Priorité : Toutes</option>
             <option value="faible">faible</option>
             <option value="moyenne">moyenne</option>
             <option value="haute">haute</option>
           </select>
+
           <span class="divider"></span>
+
           <label class="muted">Trier</label>
           <select id="sortField" title="Champ de tri">
             <option value="echeance">Échéance</option>
@@ -108,6 +117,7 @@
             <option value="asc">Asc.</option>
             <option value="desc">Desc.</option>
           </select>
+
           <span class="spacer"></span>
           <button id="exportCsvBtn" class="ghost" title="Exporter la vue filtrée">Exporter CSV</button>
           <button id="refreshBtn" class="ghost" title="Rafraîchir">Rafraîchir</button>
@@ -142,14 +152,18 @@
         <h2 id="editTitle">Modifier l’action</h2>
         <button class="ghost" type="button" id="closeEdit">Fermer</button>
       </div>
+
       <div class="card-body">
         <div id="editMsg"></div>
+
         <form id="editForm">
           <input type="hidden" id="e_id" />
+
           <div class="field">
             <label for="e_description">Description</label>
             <textarea id="e_description" required></textarea>
           </div>
+
           <div class="row">
             <div class="field">
               <label for="e_priorite">Priorité</label>
@@ -159,6 +173,7 @@
                 <option value="haute">haute</option>
               </select>
             </div>
+
             <div class="field">
               <label for="e_etat">État</label>
               <select id="e_etat">
@@ -169,11 +184,13 @@
               </select>
             </div>
           </div>
+
           <div class="row">
             <div class="field">
               <label for="e_echeance">Échéance</label>
               <input type="datetime-local" id="e_echeance" />
             </div>
+
             <div class="field">
               <label for="e_responsable_mode">Responsable</label>
               <select id="e_responsable_mode">
@@ -181,11 +198,13 @@
                 <option value="me">Moi</option>
                 <option value="uuid">UUID spécifique</option>
               </select>
+
               <div id="e_responsable_uuid_wrap" class="field hidden" style="margin-top:8px;">
                 <input type="text" id="e_responsable_uuid" placeholder="UUID du responsable" />
               </div>
             </div>
           </div>
+
           <div class="actions">
             <button type="submit" class="primary">Enregistrer</button>
           </div>
@@ -198,3 +217,4 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="./app.js"></script>
 </body>
+</html>
