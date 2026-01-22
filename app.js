@@ -1,8 +1,8 @@
 
 // ====== CONFIG SUPABASE ======
-const SUPABASE_URL = "https://axlzgvfbmqjwvmmzpimr.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4bHpndmZibXFqd3ZtbXpwaW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MDI3NjQsImV4cCI6MjA4NDA3ODc2NH0.7S7PbON5F_FH2x2Ashd1-9XU6JW2qYMZ482uv0m4kFI";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const SUPABASE_URL = document.querySelector('meta[name="supabase-url"]').content;
+const SUPABASE_ANON_KEY = document.querySelector('meta[name="supabase-anon"]').content;
+const db = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ====== STATE ======
 let currentUser = null;
@@ -85,7 +85,7 @@ async function testActionsTable() {
   el.innerHTML = `Test connexion table <b>actions</b> : <span class="muted">en cours…</span>`;
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from('actions')
       .select('id, created_at')
       .order('created_at', { ascending: false })
@@ -124,7 +124,7 @@ async function testActionsTable() {
 
 // ====== INIT ======
 (async function init() {
-  const { data: { user }, error } = await supabase.auth.getUser();
+  const { data: { user }, error } = await db.auth.getUser();
   if (error || !user) {
     window.location.href = '/login.html';
     return;
@@ -143,7 +143,7 @@ async function testActionsTable() {
 
 // ====== REALTIME ======
 function subscribeRealtime() {
-  supabase
+  db
     .channel('public:actions')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'actions' }, (payload) => {
       const r = payload.new ?? payload.old ?? {};
@@ -158,7 +158,7 @@ function subscribeRealtime() {
 // ====== LOAD / FILTER / SORT / RENDER ======
 async function loadActions() {
   setStatus('Chargement…', true, 'list');
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from('actions')
     .select('*')
     .or(`auteur_id.eq.${currentUser.id},responsable_id.eq.${currentUser.id}`);
@@ -305,7 +305,7 @@ async function onCreate(e) {
     responsable_id = uuid;
   }
 
-  const { data, error } = await supabase.rpc('create_action', {
+  const { data, error } = await db.rpc('create_action', {
     p_responsable_id: responsable_id,
     p_description: description,
     p_etat: etat,
@@ -363,7 +363,7 @@ async function onSaveEdit(e) {
     upd.responsable_id = uuid;
   }
 
-  const { error } = await supabase.from('actions').update(upd).eq('id', id);
+  const { error } = await db.from('actions').update(upd).eq('id', id);
   if (error) {
     setStatus(`Erreur de mise à jour : ${error.message}`, false, 'edit');
     return;
@@ -381,7 +381,7 @@ async function onDelete(id) {
   const ok = confirm(`Supprimer cette action ?\n\n${short}\n\nCette opération est irréversible.`);
   if (!ok) return;
 
-  const { error } = await supabase.from('actions').delete().eq('id', id);
+  const { error } = await db.from('actions').delete().eq('id', id);
   if (error) {
     alert('Erreur de suppression : ' + error.message);
     return;
