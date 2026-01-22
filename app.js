@@ -2,7 +2,7 @@
 // 1) Initialisation Supabase (mêmes <meta> que dans home.html)
 const SUPABASE_URL = document.querySelector('meta[name="supabase-url"]').content;
 const SUPABASE_ANON_KEY = document.querySelector('meta[name="supabase-anon"]').content;
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ====== STATE ======
 let currentUser = null;
@@ -65,7 +65,7 @@ function setStatus(msg, ok = true, where = 'list') {
 // ====== INIT ======
 (async function init() {
   try {
-    const { data: { user }, error } = await sb.auth.getUser();
+    const { data: { user }, error } = await supabase.auth.getUser();
     if (error) {
       console.error('auth.getUser error:', error);
     }
@@ -88,7 +88,7 @@ function setStatus(msg, ok = true, where = 'list') {
 
 // ====== REALTIME ======
 function subscribeRealtime() {
-  sb
+  supabase
     .channel('public:actions')
     .on('postgres_changes', { event: '*', schema: 'public', table: 'actions' }, (payload) => {
       const r = payload.new || payload.old || {};
@@ -106,7 +106,7 @@ function subscribeRealtime() {
 // ====== LOAD / FILTER / SORT / RENDER ======
 async function loadActions() {
   setStatus('Chargement…', true, 'list');
-  const { data, error } = await sb
+  const { data, error } = await supabase
     .from('actions')
     .select('*')
     .or(`auteur_id.eq.${currentUser.id},responsable_id.eq.${currentUser.id}`);
@@ -246,7 +246,7 @@ async function onCreate(e) {
   let ok = false;
   let errMsg = '';
   try {
-    const { data, error } = await sb.rpc('create_action', {
+    const { data, error } = await supabase.rpc('create_action', {
       p_responsable_id: responsable_id,
       p_description: description,
       p_etat: etat,
@@ -263,7 +263,7 @@ async function onCreate(e) {
   // 2) Fallback : insertion directe (RLS autorise si authentifié)
   if (!ok) {
     try {
-      const { error: insErr } = await sb.from('actions').insert([{
+      const { error: insErr } = await supabase.from('actions').insert([{
         auteur_id: currentUser.id,             // RLS: doit == auth.uid()
         responsable_id,
         description,
@@ -321,7 +321,7 @@ async function onSaveEdit(e) {
     upd.responsable_id = uuid;
   }
 
-  const { error } = await sb.from('actions').update(upd).eq('id', id);
+  const { error } = await supabase.from('actions').update(upd).eq('id', id);
   if (error) {
     console.error('Update error:', error);
     setStatus(`Erreur de mise à jour : ${error.message}`, false, 'edit');
@@ -339,7 +339,7 @@ async function onDelete(id) {
   const ok = confirm(`Supprimer cette action ?\n\n${short}\n\nCette opération est irréversible.`);
   if (!ok) return;
 
-  const { error } = await sb.from('actions').delete().eq('id', id);
+  const { error } = await supabase.from('actions').delete().eq('id', id);
   if (error) {
     console.error('Delete error:', error);
     alert('Erreur de suppression : ' + error.message);
