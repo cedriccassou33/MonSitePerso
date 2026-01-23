@@ -41,8 +41,8 @@ document.getElementById('btn-login').addEventListener('click', async () => {
     await sb.rpc('mark_last_login', { p_user: uid });
   } catch (_) {}
 
-  // OK → aller sur home.html
-  window.location.href = 'home.html';
+  // OK → aller sur actions.html
+  window.location.href = 'actions.html';
 });
 
 // 4) Création de compte
