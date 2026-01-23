@@ -25,8 +25,14 @@ document.getElementById("createForm").addEventListener("submit", async (e) => {
     p_responsable_id: null
   };
 
-  // Exécution RPC create_action()
-  const { data, error } = await supabase.rpc("create_action", dataToSend);
+console.log("🟡 Soumission du formulaire");
+
+const { data, error } = await supabase.rpc("create_action", dataToSend);
+
+console.log("🟢 RPC appelée");
+console.log("➡️ data:", data);
+console.log("❌ error:", error);
+
 
   if (error) {
     msg.textContent = "Erreur: " + error.message;
