@@ -1,46 +1,47 @@
-// ---- CONFIG SUPABASE ----
-const SUPABASE_URL = "https://axlzgvfbmqjwvmmzpimr.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4bHpndmZibXFqd3ZtbXpwaW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MDI3NjQsImV4cCI6MjA4NDA3ODc2NH0.7S7PbON5F_FH2x2Ashd1-9XU6JW2qYMZ482uv0m4kFI";
+console.log("🚀 app.js exécuté");
 
-console.log("✅ app.js est chargé");
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.__SUPABASE_ALREADY_INIT__) return;
+  window.__SUPABASE_ALREADY_INIT__ = true;
 
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  const SUPABASE_URL = "https://axlzgvfbmqjwvmmzpimr.supabase.co";
+  const SUPABASE_ANON_KEY = "…";
 
-// ---- FORM ----
-document.getElementById("createForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
+  const supabase = window.supabase.createClient(
+    SUPABASE_URL,
+    SUPABASE_ANON_KEY
+  );
 
-  const description = document.getElementById("description").value.trim();
-  const msg = document.getElementById("msg");
+  console.log("✅ Supabase initialisé");
 
-  if (!description) {
-    msg.textContent = "Description obligatoire.";
-    return;
-  }
+  document.getElementById("createForm").addEventListener("submit", async (e) => {
+    console.log("📨 submit détecté");
+    e.preventDefault();
 
-  // Valeurs par défaut
-  const dataToSend = {
-    p_description: description,
-    p_priorite: "moyenne",
-    p_etat: "à faire",
-    p_echeance: null,
-    p_responsable_id: null
-  };
+    const description = document.getElementById("description").value.trim();
+    const msg = document.getElementById("msg");
 
-console.log("🟡 Soumission du formulaire");
+    if (!description) {
+      msg.textContent = "Description obligatoire.";
+      return;
+    }
 
-const { data, error } = await supabase.rpc("create_action", dataToSend);
+    const { data, error } = await supabase.rpc("create_action", {
+      p_description: description,
+      p_priorite: "moyenne",
+      p_etat: "à faire",
+      p_echeance: null,
+      p_responsable_id: null
+    });
 
-console.log("🟢 RPC appelée");
-console.log("➡️ data:", data);
-console.log("❌ error:", error);
+    console.log("➡️ data:", data);
+    console.log("❌ error:", error);
 
+    if (error) {
+      msg.textContent = "Erreur: " + error.message;
+      return;
+    }
 
-  if (error) {
-    msg.textContent = "Erreur: " + error.message;
-    return;
-  }
-
-  msg.textContent = "Action créée ✔️";
-  document.getElementById("description").value = "";
+    msg.textContent = "Action créée ✔️";
+  });
 });
