@@ -8,7 +8,7 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 (async () => {
   const { data: { session } } = await sb.auth.getSession();
   if (session?.user) {
-    window.location.href = 'accueil.html';
+    window.location.href = './accueil.html';
   }
 })();
 
@@ -42,7 +42,7 @@ document.getElementById('btn-login').addEventListener('click', async () => {
   } catch (_) {}
 
   // OK → aller sur actions.html
-  window.location.href = 'actions.html';
+  window.location.href = './actions.html';
 });
 
 // 4) Création de compte
