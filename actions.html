@@ -3,198 +3,23 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
-  <title>Actions</title>
+  <title>Créer une action</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="./styles.css" />
 </head>
 <body>
-  <header class="app-header">
-    <h1>Actions</h1>
-    <div id="userInfo" class="muted">Chargement…</div>
 
-    <!-- ✅ Test connexion table actions -->
-    <div id="dbHealth" class="muted">
-      Test connexion table <b>actions</b> : <span class="muted">en cours…</span>
-    </div>
-  </header>
+<h2>Créer une action (test minimal)</h2>
 
-  <main class="container grid">
-    <!-- Colonne gauche : création -->
-    <section class="card">
-      <div class="card-header">
-        <h2>Créer une action</h2>
-      </div>
-      <div class="card-body">
-        <div id="createMsg"></div>
-        <form id="createForm">
-          <div class="field">
-            <label for="c_description">Description</label>
-            <textarea id="c_description" required placeholder="Ex.: Préparer le plan de maintenance Q1…"></textarea>
-          </div>
-          <div class="row">
-            <div class="field">
-              <label for="c_priorite">Priorité</label>
-              <select id="c_priorite">
-                <option value="faible">faible</option>
-                <option value="moyenne" selected>moyenne</option>
-                <option value="haute">haute</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="c_etat">État</label>
-              <select id="c_etat">
-                <option value="à faire" selected>à faire</option>
-                <option value="en cours">en cours</option>
-                <option value="fait">fait</option>
-                <option value="annulé">annulé</option>
-              </select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="field">
-              <label for="c_echeance">Échéance</label>
-              <input type="datetime-local" id="c_echeance" />
-              <div class="hint">Optionnel — stockée en UTC</div>
-            </div>
-            <div class="field">
-              <label for="c_responsable_mode">Responsable</label>
-              <select id="c_responsable_mode">
-                <option value="me" selected>Moi</option>
-                <option value="uuid">UUID spécifique</option>
-              </select>
-              <div id="c_responsable_uuid_wrap" class="field hidden" style="margin-top:8px;">
-                <input type="text" id="c_responsable_uuid" placeholder="UUID du responsable (xxxxxxxx-....)" />
-                <div class="hint">Laissez “Moi” si vous êtes le responsable.</div>
-              </div>
-            </div>
-          </div>
-          <div class="actions">
-            <button type="button" class="ghost" id="resetCreate">Réinitialiser</button>
-            <button type="submit" class="primary">Créer</button>
-          </div>
-        </form>
-      </div>
-    </section>
+<form id="createForm">
+  <label>Description :</label><br/>
+  <textarea id="description" placeholder="Tape ta description ici..." required></textarea><br/><br/>
 
-    <!-- Colonne droite : liste + filtres/tri/export -->
-    <section class="card list-card">
-      <div class="card-header">
-        <h2>Mes actions (auteur ou responsable)</h2>
-        <div class="toolbar">
-          <label class="muted">Filtrer</label>
-          <select id="filterEtat" title="Filtrer par état">
-            <option value="all" selected>État : Tous</option>
-            <option value="à faire">à faire</option>
-            <option value="en cours">en cours</option>
-            <option value="fait">fait</option>
-            <option value="annulé">annulé</option>
-          </select>
-          <select id="filterPriorite" title="Filtrer par priorité">
-            <option value="all" selected>Priorité : Toutes</option>
-            <option value="faible">faible</option>
-            <option value="moyenne">moyenne</option>
-            <option value="haute">haute</option>
-          </select>
-          <span class="divider"></span>
-          <label class="muted">Trier</label>
-          <select id="sortField" title="Champ de tri">
-            <option value="echeance">Échéance</option>
-            <option value="created_at">Créée le</option>
-            <option value="priorite">Priorité</option>
-            <option value="etat">État</option>
-            <option value="description">Description</option>
-          </select>
-          <select id="sortDir" title="Direction du tri">
-            <option value="asc">Asc.</option>
-            <option value="desc">Desc.</option>
-          </select>
-          <span class="spacer"></span>
-          <button id="exportCsvBtn" class="ghost" title="Exporter la vue filtrée">Exporter CSV</button>
-          <button id="refreshBtn" class="ghost" title="Rafraîchir">Rafraîchir</button>
-        </div>
-      </div>
+  <button type="submit">Créer</button>
+</form>
 
-      <div class="table-wrap">
-        <table id="actionsTable">
-          <thead>
-            <tr>
-              <th>Description</th>
-              <th style="min-width:135px;">État & priorité</th>
-              <th style="min-width:140px;">Échéance</th>
-              <th style="min-width:110px;">Rôle</th>
-              <th style="min-width:160px;">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="tbody"></tbody>
-        </table>
-      </div>
+<div id="msg"></div>
 
-      <div class="card-body">
-        <div id="listMsg" class="statusbar">—</div>
-      </div>
-    </section>
-  </main>
-
-  <!-- Modal édition -->
-  <div id="editModal" class="modal-backdrop" aria-hidden="true">
-    <div class="modal card" role="dialog" aria-modal="true" aria-labelledby="editTitle">
-      <div class="card-header">
-        <h2 id="editTitle">Modifier l’action</h2>
-        <button class="ghost" type="button" id="closeEdit">Fermer</button>
-      </div>
-      <div class="card-body">
-        <div id="editMsg"></div>
-        <form id="editForm">
-          <input type="hidden" id="e_id" />
-          <div class="field">
-            <label for="e_description">Description</label>
-            <textarea id="e_description" required></textarea>
-          </div>
-          <div class="row">
-            <div class="field">
-              <label for="e_priorite">Priorité</label>
-              <select id="e_priorite">
-                <option value="faible">faible</option>
-                <option value="moyenne">moyenne</option>
-                <option value="haute">haute</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="e_etat">État</label>
-              <select id="e_etat">
-                <option value="à faire">à faire</option>
-                <option value="en cours">en cours</option>
-                <option value="fait">fait</option>
-                <option value="annulé">annulé</option>
-              </select>
-            </div>
-          </div>
-          <div class="row">
-            <div class="field">
-              <label for="e_echeance">Échéance</label>
-              <input type="datetime-local" id="e_echeance" />
-            </div>
-            <div class="field">
-              <label for="e_responsable_mode">Responsable</label>
-              <select id="e_responsable_mode">
-                <option value="keep" selected>Conserver</option>
-                <option value="me">Moi</option>
-                <option value="uuid">UUID spécifique</option>
-              </select>
-              <div id="e_responsable_uuid_wrap" class="field hidden" style="margin-top:8px;">
-                <input type="text" id="e_responsable_uuid" placeholder="UUID du responsable" />
-              </div>
-            </div>
-          </div>
-          <div class="actions">
-            <button type="submit" class="primary">Enregistrer</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-
-  <!-- Supabase client + app -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="./app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="app.js"></script>
 </body>
+</html>
