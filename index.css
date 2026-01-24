@@ -1,41 +1,44 @@
 
-/* --- PAGE GLOBALE --- */
+/* --- PAGE GLOBALE (Dark Sanofi) --- */
 body {
-  background: linear-gradient(135deg, #e9eefc, #f4f7ff);
+  background: radial-gradient(circle at top, #2e1a47, #1a112b 70%);
   height: 100vh;
   margin: 0;
   display: flex;
   justify-content: center;
   align-items: center;
   font-family: "Segoe UI", Arial, sans-serif;
+  color: #e8e8e8;
 }
 
 /* --- CONTAINER PRINCIPAL --- */
 .login-container {
-  background: rgba(255, 255, 255, 0.8);
-  padding: 30px 35px;
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-  width: 320px;
+  background: rgba(35, 24, 54, 0.85); /* Violet très sombre transparent */
+  padding: 32px 38px;
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.25);
+  width: 330px;
   text-align: left;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 /* --- TITRE --- */
 .login-container h2 {
   margin-top: 0;
-  color: #2a2a2a;
   font-weight: 600;
   text-align: center;
+  color: #ffffff;
+  letter-spacing: 0.5px;
 }
 
 /* --- LABELS --- */
 label {
   display: block;
-  margin-top: 15px;
+  margin-top: 18px;
   margin-bottom: 6px;
-  font-size: 0.9rem;
-  color: #333;
+  font-size: 0.92rem;
+  color: #cfcfe8;
   font-weight: 500;
 }
 
@@ -45,17 +48,24 @@ input[type="password"] {
   width: 100%;
   padding: 10px 12px;
   font-size: 0.95rem;
-  border: 1px solid #ccd2e3;
+  background: #1d152b;
+  border: 1px solid #4f3d6b;
+  color: #e8e8e8;
   border-radius: 6px;
-  transition: border-color 0.25s ease;
-}
-input:focus {
-  outline: none;
-  border-color: #6b82f7;
-  box-shadow: 0 0 0 3px rgba(107, 130, 247, 0.25);
+  transition: border-color 0.25s ease, box-shadow 0.25s;
 }
 
-/* --- WRAPPERS IDENTIFIANT & MDP --- */
+input::placeholder {
+  color: #9a95ac;
+}
+
+input:focus {
+  outline: none;
+  border-color: #4f5bd5; /* Bleu Sanofi */
+  box-shadow: 0 0 0 3px rgba(79, 91, 213, 0.35);
+}
+
+/* --- WRAPPERS --- */
 .password-wrapper,
 .ident-wrapper {
   display: flex;
@@ -63,63 +73,64 @@ input:focus {
   position: relative;
 }
 
-/* Icône oeil */
+/* Icône de visibilité */
 #togglePwd {
   cursor: pointer;
   margin-left: 8px;
   user-select: none;
-  color: #555;
+  color: #b3a9c9;
   transition: 0.2s;
 }
 #togglePwd:hover {
-  color: #111;
+  color: #ffffff;
 }
 
 /* --- BOUTONS --- */
 .button-wrapper {
-  margin-top: 20px;
+  margin-top: 25px;
   display: flex;
   gap: 10px;
 }
 
 button {
   flex: 1;
-  padding: 10px;
+  padding: 11px;
   border: none;
   border-radius: 6px;
   font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.25s, transform 0.1s;
+  transition: background 0.25s, transform 0.1s, box-shadow 0.2s;
 }
 
-/* Bouton principal */
+/* Bouton principal (login) */
 #loginBtn {
-  background: #6b82f7;
+  background: #4f5bd5; /* Bleu Sanofi */
   color: white;
 }
 #loginBtn:hover {
-  background: #5a71e1;
+  background: #3e4ac0;
 }
 #loginBtn:active {
   transform: scale(0.97);
 }
 
-/* Bouton secondaire */
+/* Bouton secondaire (créer compte) */
 #createAccountBtn {
-  background: #f0f2ff;
-  color: #3d47a3;
-  border: 1px solid #c7cdf6;
+  background: #3c2f58;
+  color: #d3d0e6;
+  border: 1px solid #5b4b82;
 }
 #createAccountBtn:hover {
-  background: #e4e7ff;
+  background: #4b3a72;
 }
 #createAccountBtn:active {
   transform: scale(0.97);
 }
 
-/* --- ZONE DE MESSAGE (si JS y ajoute du style) --- */
+/* --- ZONE DE MESSAGE (affichée via JS) --- */
 #message {
-  margin-top: 15px;
+  margin-top: 18px;
   font-size: 0.9rem;
+  color: #e8e8e8;
 }
