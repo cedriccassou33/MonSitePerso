@@ -1,30 +1,125 @@
 
+/* --- PAGE GLOBALE --- */
 body {
-    background: #f4f4f4;
-    height: 100vh;
-    justify-content: center;
-    align-items: center;
-    font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #e9eefc, #f4f7ff);
+  height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: "Segoe UI", Arial, sans-serif;
 }
 
+/* --- CONTAINER PRINCIPAL --- */
 .login-container {
-    background: white;
-    padding: 20px 30px;
-    border-radius: 6px;
-    box-shadow: 0 0 10px #ccc;
-    width: 300px;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 30px 35px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+  width: 320px;
+  text-align: left;
 }
 
-.password-wrapper {
-    display: flex;
-    align-items: center;
+/* --- TITRE --- */
+.login-container h2 {
+  margin-top: 0;
+  color: #2a2a2a;
+  font-weight: 600;
+  text-align: center;
 }
 
-.password-wrapper input {
-    flex: 1;
+/* --- LABELS --- */
+label {
+  display: block;
+  margin-top: 15px;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  color: #333;
+  font-weight: 500;
 }
 
+/* --- CHAMPS DE SAISIE --- */
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  border: 1px solid #ccd2e3;
+  border-radius: 6px;
+  transition: border-color 0.25s ease;
+}
+input:focus {
+  outline: none;
+  border-color: #6b82f7;
+  box-shadow: 0 0 0 3px rgba(107, 130, 247, 0.25);
+}
+
+/* --- WRAPPERS IDENTIFIANT & MDP --- */
+.password-wrapper,
+.ident-wrapper {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+/* Icône oeil */
 #togglePwd {
-    cursor: pointer;
-    margin-left: 8px;
+  cursor: pointer;
+  margin-left: 8px;
+  user-select: none;
+  color: #555;
+  transition: 0.2s;
+}
+#togglePwd:hover {
+  color: #111;
+}
+
+/* --- BOUTONS --- */
+.button-wrapper {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+}
+
+button {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.25s, transform 0.1s;
+}
+
+/* Bouton principal */
+#loginBtn {
+  background: #6b82f7;
+  color: white;
+}
+#loginBtn:hover {
+  background: #5a71e1;
+}
+#loginBtn:active {
+  transform: scale(0.97);
+}
+
+/* Bouton secondaire */
+#createAccountBtn {
+  background: #f0f2ff;
+  color: #3d47a3;
+  border: 1px solid #c7cdf6;
+}
+#createAccountBtn:hover {
+  background: #e4e7ff;
+}
+#createAccountBtn:active {
+  transform: scale(0.97);
+}
+
+/* --- ZONE DE MESSAGE (si JS y ajoute du style) --- */
+#message {
+  margin-top: 15px;
+  font-size: 0.9rem;
 }

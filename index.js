@@ -13,6 +13,7 @@ document.getElementById("togglePwd").onclick = () => {
   fld.type = fld.type === "password" ? "text" : "password";
 };
 
+// showMessage affiche le contenu de la variable text dans la zone "message" du HTML
 function showMessage(text, type = "info") {
   // fallback si l'élément n'existe pas
   if (!messageEl) {
@@ -102,10 +103,13 @@ function supabaseHeaders(extra = {}) {
  * Vérifie si l'identifiant existe déjà
  */
 async function userExists(identifiant) {
+    //await fetch : Stoppe l’exécution ici et attends que le serveur réponde.
+    //encodeURIComponent transforme les caractères spéciaux en séquences encodées (%XX) compatibles URL
+    //&select=identifiant&limit=1 => renvoie la colonne idetifiant et limite la réponse à une ligne max
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/comptes_utilisateurs?identifiant=eq.${encodeURIComponent(
       identifiant
-    )}&select=identifiant&limit=1`,
+    )}&select=identifiant&limit=1`, 
     { headers: supabaseHeaders() }
   );
 
