@@ -261,7 +261,7 @@ loginBtn.onclick = async () => {
 
     // redirection après un court délai
     setTimeout(() => {
-    window.location.href = "home.html";
+    window.location.href = "actions.html";
     }, 800);
 
   } catch (e) {

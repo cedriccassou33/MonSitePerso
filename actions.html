@@ -3,23 +3,560 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
-  <title>Créer une action</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Actions - Todo simple</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --card: #121a2b;
+      --text: #e9eefc;
+      --muted: #aab6d6;
+      --accent: #5b8cff;
+      --danger: #ff5b6e;
+      --ok: #4ade80;
+      --border: rgba(255,255,255,.10);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: linear-gradient(180deg, #070c18, var(--bg));
+      color: var(--text);
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 22px; }
+    h1 { font-size: 20px; margin: 0 0 14px; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; }
+    .card {
+      background: rgba(18, 26, 43, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.25);
+    }
+    .card + .card { margin-top: 14px; }
+    label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    input, textarea, select, button {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--text);
+      padding: 10px 10px;
+      outline: none;
+    }
+    textarea { min-height: 80px; resize: vertical; }
+    input:focus, textarea:focus, select:focus { border-color: rgba(91,140,255,.65); }
+    .col { flex: 1; min-width: 200px; }
+    .col.small { min-width: 140px; flex: 0 0 160px; }
+    .actionsbar { display: flex; gap: 10px; align-items: center; }
+    button {
+      cursor: pointer;
+      background: linear-gradient(180deg, rgba(91,140,255,.9), rgba(91,140,255,.65));
+      border: 1px solid rgba(91,140,255,.55);
+      font-weight: 700;
+    }
+    button.secondary {
+      background: rgba(255,255,255,.05);
+      border: 1px solid var(--border);
+      font-weight: 600;
+    }
+    button.danger {
+      background: rgba(255,91,110,.12);
+      border-color: rgba(255,91,110,.35);
+      color: #ffd6dc;
+      font-weight: 700;
+    }
+    .muted { color: var(--muted); font-size: 12px; }
+    .badge {
+      display: inline-block;
+      padding: 3px 8px; border-radius: 999px; font-size: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,.04);
+      color: var(--muted);
+    }
+    .list { display: grid; gap: 10px; margin-top: 10px; }
+    .item {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      background: rgba(255,255,255,.03);
+    }
+    .item-header { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
+    .item-title { font-weight: 700; margin: 0; }
+    .meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+    .meta span { font-size: 12px; }
+    .item-desc { margin: 10px 0 0; color: #dbe6ff; white-space: pre-wrap; }
+    .item-footer { margin-top: 12px; display: flex; gap: 10px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 760px){ .grid2 { grid-template-columns: 1fr; } }
+    .status { padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; }
+    .s-a_faire { background: rgba(91,140,255,.15); color: #bcd0ff; border: 1px solid rgba(91,140,255,.30); }
+    .s-en_cours { background: rgba(255,196,0,.14); color: #ffe6a6; border: 1px solid rgba(255,196,0,.25); }
+    .s-fait { background: rgba(74,222,128,.12); color: #c6ffd9; border: 1px solid rgba(74,222,128,.25); }
+    .s-annule { background: rgba(255,91,110,.12); color: #ffd6dc; border: 1px solid rgba(255,91,110,.25); }
+    .toast { margin-top: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border); }
+    .toast.ok { background: rgba(74,222,128,.10); border-color: rgba(74,222,128,.25); }
+    .toast.err { background: rgba(255,91,110,.10); border-color: rgba(255,91,110,.25); }
+  </style>
 </head>
+
 <body>
+  <div class="wrap">
+    <h1>Gestion d’actions (Todo) – version simple</h1>
+    <div class="card">
+      <div class="row">
+        <div class="col">
+          <label>Supabase URL</label>
+          <input id="sbUrl" placeholder="https://xxxx.supabase.co" />
+        </div>
+        <div class="col">
+          <label>Supabase Anon Key</label>
+          <input id="sbKey" placeholder="eyJhbGciOi..." />
+        </div>
+        <div class="col small">
+          <label>Mon identifiant</label>
+          <input id="userId" placeholder="ex: cedric" />
+        </div>
+        <div class="col small actionsbar">
+          <button id="btnConnect">Charger</button>
+          <button class="secondary" id="btnClear">Reset</button>
+        </div>
+      </div>
+      <p class="muted">
+        Cette page filtre les actions où <b>auteur_id</b> ou <b>responsable_id</b> = ton identifiant.
+        (Sécurité “démo” : à sécuriser via backend/RLS si projet public.)
+      </p>
+      <div id="toast"></div>
+    </div>
 
-<h2>Créer une action (test minimal)</h2>
+    <div class="card">
+      <h2 style="margin:0 0 10px;font-size:16px;">Créer une nouvelle action</h2>
+      <div class="grid2">
+        <div>
+          <label>Description (max 500 caractères)</label>
+          <textarea id="newDesc" maxlength="500" placeholder="Décrire l’action..."></textarea>
+          <div class="muted"><span id="counter">0</span>/500</div>
+        </div>
+        <div>
+          <div class="row">
+            <div class="col">
+              <label>Priorité</label>
+              <select id="newPriority">
+                <option value="basse">basse</option>
+                <option value="moyenne" selected>moyenne</option>
+                <option value="haute">haute</option>
+              </select>
+            </div>
+            <div class="col">
+              <label>État</label>
+              <select id="newStatus">
+                <option value="a_faire" selected>à faire</option>
+                <option value="en_cours">en cours</option>
+                <option value="fait">fait</option>
+                <option value="annule">annulé</option>
+              </select>
+            </div>
+          </div>
 
-<form id="createForm">
-  <label>Description :</label><br/>
-  <textarea id="description" placeholder="Tape ta description ici..." required></textarea><br/><br/>
+          <div class="row" style="margin-top:12px;">
+            <div class="col">
+              <label>Échéance</label>
+              <input id="newDue" type="datetime-local" />
+            </div>
+            <div class="col">
+              <label>Responsable (obligatoire)</label>
+              <input id="newAssignee" placeholder="identifiant responsable" />
+            </div>
+          </div>
 
-  <button type="submit">Créer</button>
-</form>
+          <div class="row" style="margin-top:12px;">
+            <div class="col">
+              <button id="btnCreate">Créer l’action</button>
+            </div>
+          </div>
+          <p class="muted" style="margin:10px 0 0;">
+            L’auteur est automatiquement ton identifiant.
+          </p>
+        </div>
+      </div>
+    </div>
 
-<div id="msg"></div>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div class="col">
+          <h2 style="margin:0;font-size:16px;">Mes actions</h2>
+          <div class="muted">Filtres rapides</div>
+        </div>
+        <div class="col small">
+          <label>Filtrer état</label>
+          <select id="filterStatus">
+            <option value="">(tous)</option>
+            <option value="a_faire">à faire</option>
+            <option value="en_cours">en cours</option>
+            <option value="fait">fait</option>
+            <option value="annule">annulé</option>
+          </select>
+        </div>
+        <div class="col small">
+          <label>Trier</label>
+          <select id="sortBy">
+            <option value="due_asc">échéance ↑</option>
+            <option value="due_desc">échéance ↓</option>
+            <option value="created_desc" selected>création ↓</option>
+          </select>
+        </div>
+      </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="app.js"></script>
+      <div class="list" id="list"></div>
+    </div>
+
+    <!-- Modal édition -->
+    <dialog id="editDialog" style="max-width:720px;width:calc(100% - 28px);border:none;border-radius:14px;background:var(--card);color:var(--text);padding:0;">
+      <form method="dialog" style="padding:14px;border:1px solid var(--border);border-radius:14px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+          <h3 style="margin:0;font-size:16px;">Modifier l’action</h3>
+          <button class="secondary" value="cancel" style="width:auto;padding:8px 10px;">✕</button>
+        </div>
+
+        <input type="hidden" id="editId" />
+
+        <div style="margin-top:12px;">
+          <label>Description (max 500 caractères)</label>
+          <textarea id="editDesc" maxlength="500"></textarea>
+        </div>
+
+        <div class="row" style="margin-top:12px;">
+          <div class="col">
+            <label>Priorité</label>
+            <select id="editPriority">
+              <option value="basse">basse</option>
+              <option value="moyenne">moyenne</option>
+              <option value="haute">haute</option>
+            </select>
+          </div>
+          <div class="col">
+            <label>État</label>
+            <select id="editStatus">
+              <option value="a_faire">à faire</option>
+              <option value="en_cours">en cours</option>
+              <option value="fait">fait</option>
+              <option value="annule">annulé</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:12px;">
+          <div class="col">
+            <label>Échéance</label>
+            <input id="editDue" type="datetime-local" />
+          </div>
+          <div class="col">
+            <label>Responsable (obligatoire)</label>
+            <input id="editAssignee" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:14px;">
+          <div class="col">
+            <button id="btnSave" value="save">Enregistrer</button>
+          </div>
+          <div class="col">
+            <button class="danger" id="btnDelete" type="button">Supprimer</button>
+          </div>
+        </div>
+        <p class="muted" style="margin:10px 0 0;">
+          (La suppression ne fonctionne que si la table autorise DELETE côté Supabase.)
+        </p>
+      </form>
+    </dialog>
+  </div>
+
+  <!-- Supabase JS v2 (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // =============== CONFIG / STATE ===============
+    let supabase = null;
+    let currentUser = "";
+    let cached = [];
+
+    const $ = (id) => document.getElementById(id);
+    const toastEl = $("toast");
+
+    // Valeurs ENUM conformes à ta table
+    const PRIORITIES = ["basse", "moyenne", "haute"];
+    const STATUSES = ["a_faire", "en_cours", "fait", "annule"];
+
+    // =============== UI HELPERS ===============
+    function toast(msg, type="ok") {
+      toastEl.innerHTML = `<div class="toast ${type}">${msg}</div>`;
+      setTimeout(() => toastEl.innerHTML = "", 3500);
+    }
+
+    function toDatetimeLocalValue(isoString) {
+      if (!isoString) return "";
+      const d = new Date(isoString);
+      // Format yyyy-MM-ddTHH:mm (local)
+      const pad = (n) => String(n).padStart(2, "0");
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function fromDatetimeLocalValue(v) {
+      if (!v) return null;
+      // datetime-local n'a pas de timezone -> on convertit en ISO UTC
+      return new Date(v).toISOString();
+    }
+
+    function statusLabel(s) {
+      return ({a_faire:"à faire", en_cours:"en cours", fait:"fait", annule:"annulé"})[s] || s;
+    }
+
+    // =============== SUPABASE INIT ===============
+    function initSupabase() {
+      const url = $("sbUrl").value.trim();
+      const key = $("sbKey").value.trim();
+      if (!url || !key) {
+        toast("Renseigne SUPABASE_URL et SUPABASE_ANON_KEY.", "err");
+        return false;
+      }
+      supabase = window.supabase.createClient(url, key);
+      return true;
+    }
+
+    // =============== CRUD ===============
+    async function loadActions() {
+      if (!supabase) return;
+      const ident = $("userId").value.trim();
+      if (!ident) { toast("Renseigne ton identifiant.", "err"); return; }
+      currentUser = ident;
+
+      // Filtre: actions où auteur_id = ident OU responsable_id = ident
+      // (La méthode .or est pratique pour ça)
+      let query = supabase
+        .from("actions")
+        .select("*")
+        .or(`auteur_id.eq.${ident},responsable_id.eq.${ident}`);
+
+      const filterStatus = $("filterStatus").value;
+      if (filterStatus) query = query.eq("status", filterStatus);
+
+      const sortBy = $("sortBy").value;
+      if (sortBy === "due_asc") query = query.order("due_date", { ascending: true, nullsFirst: false });
+      if (sortBy === "due_desc") query = query.order("due_date", { ascending: false, nullsFirst: false });
+      if (sortBy === "created_desc") query = query.order("created_at", { ascending: false });
+
+      const { data, error } = await query;
+
+      if (error) {
+        console.error(error);
+        toast("Erreur chargement : " + error.message, "err");
+        return;
+      }
+      cached = data || [];
+      renderList();
+      toast(`Chargé : ${cached.length} action(s).`, "ok");
+    }
+
+    async function createAction() {
+      if (!supabase || !currentUser) {
+        toast("Connecte-toi (Charger) d’abord.", "err");
+        return;
+      }
+      const description = $("newDesc").value.trim();
+      const priority = $("newPriority").value;
+      const status = $("newStatus").value;
+      const due_date = fromDatetimeLocalValue($("newDue").value);
+      const responsable_id = $("newAssignee").value.trim();
+
+      if (!description) { toast("Description obligatoire.", "err"); return; }
+      if (description.length > 500) { toast("Description > 500 caractères.", "err"); return; }
+      if (!PRIORITIES.includes(priority)) { toast("Priorité invalide.", "err"); return; }
+      if (!STATUSES.includes(status)) { toast("État invalide.", "err"); return; }
+      if (!responsable_id) { toast("Responsable obligatoire.", "err"); return; }
+
+      const payload = {
+        description,
+        priority,
+        status,
+        due_date,
+        auteur_id: currentUser,
+        responsable_id
+      };
+
+      const { error } = await supabase.from("actions").insert(payload);
+      if (error) {
+        console.error(error);
+        toast("Erreur création : " + error.message, "err");
+        return;
+      }
+
+      $("newDesc").value = "";
+      $("newDue").value = "";
+      $("newAssignee").value = "";
+      $("counter").textContent = "0";
+
+      await loadActions();
+      toast("Action créée ✅", "ok");
+    }
+
+    function openEdit(item) {
+      $("editId").value = item.id;
+      $("editDesc").value = item.description ?? "";
+      $("editPriority").value = item.priority ?? "moyenne";
+      $("editStatus").value = item.status ?? "a_faire";
+      $("editDue").value = toDatetimeLocalValue(item.due_date);
+      $("editAssignee").value = item.responsable_id ?? "";
+
+      $("editDialog").showModal();
+    }
+
+    async function saveEdit() {
+      const id = $("editId").value;
+      const description = $("editDesc").value.trim();
+      const priority = $("editPriority").value;
+      const status = $("editStatus").value;
+      const due_date = fromDatetimeLocalValue($("editDue").value);
+      const responsable_id = $("editAssignee").value.trim();
+
+      if (!description) { toast("Description obligatoire.", "err"); return; }
+      if (description.length > 500) { toast("Description > 500 caractères.", "err"); return; }
+      if (!responsable_id) { toast("Responsable obligatoire.", "err"); return; }
+
+      const patch = { description, priority, status, due_date, responsable_id };
+
+      const { error } = await supabase
+        .from("actions")
+        .update(patch)
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        toast("Erreur mise à jour : " + error.message, "err");
+        return;
+      }
+
+      toast("Modifications enregistrées ✅", "ok");
+      await loadActions();
+    }
+
+    async function deleteAction() {
+      const id = $("editId").value;
+      if (!id) return;
+
+      if (!confirm("Supprimer cette action ?")) return;
+
+      const { error } = await supabase
+        .from("actions")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error(error);
+        toast("Erreur suppression : " + error.message, "err");
+        return;
+      }
+
+      $("editDialog").close();
+      toast("Action supprimée ✅", "ok");
+      await loadActions();
+    }
+
+    // =============== RENDER ===============
+    function renderList() {
+      const list = $("list");
+      if (!cached.length) {
+        list.innerHTML = `<div class="muted">Aucune action à afficher.</div>`;
+        return;
+      }
+
+      list.innerHTML = cached.map(a => {
+        const due = a.due_date ? new Date(a.due_date).toLocaleString() : "—";
+        const isMine = (a.auteur_id === currentUser) ? "auteur" : "responsable";
+        const sClass = `status s-${a.status}`;
+
+        return `
+          <div class="item">
+            <div class="item-header">
+              <div>
+                <div class="item-title">${escapeHtml(a.description).slice(0, 80)}${a.description.length > 80 ? "…" : ""}</div>
+                <div class="meta">
+                  <span class="${sClass}">${escapeHtml(statusLabel(a.status))}</span>
+                  <span class="badge">priorité: <b>${escapeHtml(a.priority)}</b></span>
+                  <span class="badge">échéance: <b>${escapeHtml(due)}</b></span>
+                  <span class="badge">auteur: <b>${escapeHtml(a.auteur_id)}</b></span>
+                  <span class="badge">responsable: <b>${escapeHtml(a.responsable_id)}</b></span>
+                  <span class="badge">vu en tant que: <b>${escapeHtml(isMine)}</b></span>
+                </div>
+              </div>
+              <div style="min-width:120px;">
+                <button class="secondary" data-edit="${a.id}">Modifier</button>
+              </div>
+            </div>
+            <div class="item-desc">${escapeHtml(a.description)}</div>
+          </div>
+        `;
+      }).join("");
+
+      // Bind buttons
+      list.querySelectorAll("[data-edit]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const id = btn.getAttribute("data-edit");
+          const item = cached.find(x => x.id === id);
+          if (item) openEdit(item);
+        });
+      });
+    }
+
+    function escapeHtml(str) {
+      return String(str ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    // =============== EVENTS ===============
+    $("btnConnect").addEventListener("click", async () => {
+      // Persiste les champs (pratique)
+      localStorage.setItem("sbUrl", $("sbUrl").value.trim());
+      localStorage.setItem("sbKey", $("sbKey").value.trim());
+      localStorage.setItem("userId", $("userId").value.trim());
+
+      if (!initSupabase()) return;
+      await loadActions();
+    });
+
+    $("btnClear").addEventListener("click", () => {
+      ["sbUrl", "sbKey", "userId"].forEach(k => localStorage.removeItem(k));
+      location.reload();
+    });
+
+    $("btnCreate").addEventListener("click", createAction);
+    $("filterStatus").addEventListener("change", loadActions);
+    $("sortBy").addEventListener("change", loadActions);
+
+    $("newDesc").addEventListener("input", () => {
+      $("counter").textContent = String($("newDesc").value.length);
+    });
+
+    // Modal save (le bouton "Enregistrer" ferme par défaut le dialog car <form method="dialog">,
+    // donc on intercepte pour sauvegarder puis fermer.
+    $("btnSave").addEventListener("click", async (e) => {
+      e.preventDefault();
+      await saveEdit();
+      $("editDialog").close();
+    });
+
+    $("btnDelete").addEventListener("click", deleteAction);
+
+    // Auto-load saved config (optionnel)
+    window.addEventListener("DOMContentLoaded", () => {
+      const url = localStorage.getItem("sbUrl");
+      const key = localStorage.getItem("sbKey");
+      const uid = localStorage.getItem("userId");
+      if (url) $("sbUrl").value = url;
+      if (key) $("sbKey").value = key;
+      if (uid) $("userId").value = uid;
+    });
+  </script>
 </body>
 </html>
