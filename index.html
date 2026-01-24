@@ -1,53 +1,28 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="utf-8" />
-  <title>Connexion</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-
-  <!-- ⚠️ Remets ici EXACTEMENT les mêmes valeurs que dans index.html -->
-  <meta name="supabase-url" content="https://axlzgvfbmqjwvmmzpimr.supabase.co">
-  <meta name="supabase-anon" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4bHpndmZibXFqd3ZtbXpwaW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MDI3NjQsImV4cCI6MjA4NDA3ODc2NH0.7S7PbON5F_FH2x2Ashd1-9XU6JW2qYMZ482uv0m4kFI">
-
-  <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, Arial, sans-serif; margin: 3rem auto; max-width: 400px; line-height: 1.5; }
-    h1 { font-size: 1.4rem; margin-bottom: 1rem; }
-    form { display: grid; gap: .75rem; margin-top: 1rem; }
-    label { font-weight: 600; }
-    input { padding: .6rem .8rem; border: 1px solid #ccc; border-radius: .4rem; }
-    button { padding: .6rem .8rem; border: 0; border-radius: .4rem; cursor: pointer; }
-    .row { display: flex; gap: .5rem; }
-    .row button { flex: 1; }
-    .ok { color: #0a7f2e; }
-    .err { color: #b00020; white-space: pre-wrap; }
-    .small { color: #666; font-size: .9rem; }
-  </style>
+<meta charset="UTF-8">
+<title>Connexion</title>
+<link rel="stylesheet" href="index.css">
 </head>
 <body>
-  <h1>Connexion</h1>
-  <p class="small">Identifiant = <b>admin</b> / Mot de passe = <b>admin</b> (compte par défaut).</p>
 
-  <form id="login-form" autocomplete="on">
-    <div>
-      <label for="identifiant">Identifiant</label>
-      <input id="identifiant" name="identifiant" placeholder="ex : admin" required />
-    </div>
-    <div>
-      <label for="password">Mot de passe</label>
-      <input id="password" name="password" type="password" placeholder="Votre mot de passe" required />
-    </div>
-    <div class="row">
-      <button id="btn-login" type="button">Se connecter</button>
-      <button id="btn-signup" type="button">Créer un compte</button>
-    </div>
-    <p id="status"></p>
-    <p class="small">Astuce : si votre identifiant ne contient pas “@”, on utilise automatiquement <code>@local.test</code> (ex. <code>alice</code> → <code>alice@local.test</code>).</p>
-  </form>
+<div class="login-container">
+    <h2>Connexion</h2>
 
-  <!-- SDK officiel Supabase côté navigateur -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Script d'authentification -->
-  <script src="./auth.js"></script>
+    <label>Identifiant</label>
+    <input type="text" id="identifiant" />
+
+    <label>Mot de passe</label>
+    <div class="password-wrapper">
+        <input type="password" id="motdepasse" />
+        <span id="togglePwd">👁️</span>
+    </div>
+
+    <button id="loginBtn">Se connecter</button>
+</div>
+
+<script src="./index.js"></script>
 </body>
 </html>
