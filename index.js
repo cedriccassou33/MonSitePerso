@@ -1,8 +1,8 @@
 
 // <<< REMPLACE AVEC TES VALEURS SUPABASE >>>
 const SUPABASE_URL = "https://axlzgvfbmqjwvmmzpimr.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4bHpndmZibXFqd3ZtbXpwaW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MDI3NjQsImV4cCI6MjA4NDA3ODc2NH0.7S7PbON5F_FH2x2Ashd1-9XU6JW2qYMZ482uv0m4kFI";
-
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4bHpndmZibXFqd3ZtbXpwaW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MDI3NjQsImV4cCI6MjA4NDA3ODc2NH0.7S7PbON5F_FH2x2Ashd1-9XU6JW2qYMZ482uv0m4kFI";
 
 const loginBtn = document.getElementById("loginBtn");
 
@@ -44,7 +44,9 @@ loginBtn.onclick = async () => {
 
   // 1) Récupérer l’utilisateur
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/comptes_utilisateurs?identifiant=eq.${encodeURIComponent(identifiant)}&select=identifiant,mot_de_passe_hash,connexions_echouees`,
+    `${SUPABASE_URL}/rest/v1/comptes_utilisateurs?identifiant=eq.${encodeURIComponent(
+      identifiant
+    )}&select=identifiant,mot_de_passe_hash,connexions_echouees`,
     {
       headers: {
         apikey: SUPABASE_ANON_KEY,
@@ -97,7 +99,9 @@ loginBtn.onclick = async () => {
 
     // 3) Incrémenter tentatives
     const patchRes = await fetch(
-      `${SUPABASE_URL}/rest/v1/comptes_utilisateurs?identifiant=eq.${encodeURIComponent(identifiant)}`,
+      `${SUPABASE_URL}/rest/v1/comptes_utilisateurs?identifiant=eq.${encodeURIComponent(
+        identifiant
+      )}`,
       {
         method: "PATCH",
         headers: {
@@ -118,6 +122,31 @@ loginBtn.onclick = async () => {
 
     alert(`Mot de passe erroné, tentative ${next}`);
     return;
+  }
+
+  // ✅ 4) Mot de passe correct => remise à zéro du compteur (si nécessaire)
+  if ((user.connexions_echouees ?? 0) > 0) {
+    const resetRes = await fetch(
+      `${SUPABASE_URL}/rest/v1/comptes_utilisateurs?identifiant=eq.${encodeURIComponent(
+        identifiant
+      )}`,
+      {
+        method: "PATCH",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+          "Content-Type": "application/json",
+          Prefer: "return=minimal",
+        },
+        body: JSON.stringify({ connexions_echouees: 0 }),
+      }
+    );
+
+    if (!resetRes.ok) {
+      const errText = await resetRes.text();
+      console.error("RESET error:", resetRes.status, errText);
+      // Non bloquant pour un proto : on laisse la connexion passer
+    }
   }
 
   alert("Connexion réussie !");
