@@ -122,7 +122,7 @@
         </div>
       </div>
       <p class="muted">
-        Cette page filtre les actions où <b>auteur_id</b> ou <b>responsable_id</b> = ton identifiant.
+        Cette page filtre les actions où <b>author_id</b> ou <b>responsible_id</b> = ton identifiant.
         (Sécurité “démo” : à sécuriser via backend/RLS si projet public.)
       </p>
       <div id="toast"></div>
@@ -328,12 +328,12 @@
       if (!ident) { toast("Renseigne ton identifiant.", "err"); return; }
       currentUser = ident;
 
-      // Filtre: actions où auteur_id = ident OU responsable_id = ident
+      // Filtre: actions où author_id = ident OU responsible_id = ident
       // (La méthode .or est pratique pour ça)
       let query = supabase
         .from("actions")
         .select("*")
-        .or(`auteur_id.eq.${ident},responsable_id.eq.${ident}`);
+        .or(`author_id.eq.${ident},responsible_id.eq.${ident}`);
 
       const filterStatus = $("filterStatus").value;
       if (filterStatus) query = query.eq("status", filterStatus);
@@ -364,21 +364,21 @@
       const priority = $("newPriority").value;
       const status = $("newStatus").value;
       const due_date = fromDatetimeLocalValue($("newDue").value);
-      const responsable_id = $("newAssignee").value.trim();
+      const responsible_id = $("newAssignee").value.trim();
 
       if (!description) { toast("Description obligatoire.", "err"); return; }
       if (description.length > 500) { toast("Description > 500 caractères.", "err"); return; }
       if (!PRIORITIES.includes(priority)) { toast("Priorité invalide.", "err"); return; }
       if (!STATUSES.includes(status)) { toast("État invalide.", "err"); return; }
-      if (!responsable_id) { toast("Responsable obligatoire.", "err"); return; }
+      if (!responsible_id) { toast("Responsable obligatoire.", "err"); return; }
 
       const payload = {
         description,
         priority,
         status,
         due_date,
-        auteur_id: currentUser,
-        responsable_id
+        author_id: currentUser,
+        responsible_id
       };
 
       const { error } = await supabase.from("actions").insert(payload);
@@ -403,7 +403,7 @@
       $("editPriority").value = item.priority ?? "moyenne";
       $("editStatus").value = item.status ?? "a_faire";
       $("editDue").value = toDatetimeLocalValue(item.due_date);
-      $("editAssignee").value = item.responsable_id ?? "";
+      $("editAssignee").value = item.responsible_id ?? "";
 
       $("editDialog").showModal();
     }
@@ -414,13 +414,13 @@
       const priority = $("editPriority").value;
       const status = $("editStatus").value;
       const due_date = fromDatetimeLocalValue($("editDue").value);
-      const responsable_id = $("editAssignee").value.trim();
+      const responsible_id = $("editAssignee").value.trim();
 
       if (!description) { toast("Description obligatoire.", "err"); return; }
       if (description.length > 500) { toast("Description > 500 caractères.", "err"); return; }
-      if (!responsable_id) { toast("Responsable obligatoire.", "err"); return; }
+      if (!responsible_id) { toast("Responsable obligatoire.", "err"); return; }
 
-      const patch = { description, priority, status, due_date, responsable_id };
+      const patch = { description, priority, status, due_date, responsible_id };
 
       const { error } = await supabase
         .from("actions")
@@ -469,7 +469,7 @@
 
       list.innerHTML = cached.map(a => {
         const due = a.due_date ? new Date(a.due_date).toLocaleString() : "—";
-        const isMine = (a.auteur_id === currentUser) ? "auteur" : "responsable";
+        const isMine = (a.author_id === currentUser) ? "auteur" : "responsable";
         const sClass = `status s-${a.status}`;
 
         return `
@@ -481,8 +481,8 @@
                   <span class="${sClass}">${escapeHtml(statusLabel(a.status))}</span>
                   <span class="badge">priorité: <b>${escapeHtml(a.priority)}</b></span>
                   <span class="badge">échéance: <b>${escapeHtml(due)}</b></span>
-                  <span class="badge">auteur: <b>${escapeHtml(a.auteur_id)}</b></span>
-                  <span class="badge">responsable: <b>${escapeHtml(a.responsable_id)}</b></span>
+                  <span class="badge">auteur: <b>${escapeHtml(a.author_id)}</b></span>
+                  <span class="badge">responsable: <b>${escapeHtml(a.responsible_id)}</b></span>
                   <span class="badge">vu en tant que: <b>${escapeHtml(isMine)}</b></span>
                 </div>
               </div>
