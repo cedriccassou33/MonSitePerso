@@ -256,7 +256,14 @@ loginBtn.onclick = async () => {
       }
     }
 
+   
     showMessage("Connexion réussie !", "success");
+
+    // redirection après un court délai
+    setTimeout(() => {
+    window.location.href = "home.html";
+    }, 800);
+
   } catch (e) {
     console.error(e);
     showMessage("Erreur réseau / serveur.", "error");
