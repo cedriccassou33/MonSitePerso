@@ -143,3 +143,9 @@ select option {
 .topbar button.danger{
   width: 100%;
 }
+#newDesc {
+  width: 100%;      /* largeur fixe */
+  height: 100px;     /* hauteur fixe */
+  resize: none;      /* empêche l’utilisateur de modifier la taille */
+  box-sizing: border-box; /* évite que padding/border modifient la taille */
+}

@@ -38,7 +38,6 @@
           <textarea id="newDesc" maxlength="500" placeholder="Décrire l’action..."></textarea>
           <div class="muted"><span id="counter">0</span>/500</div>
         </div>
-
         <div>
           <div class="row">
             <div class="col">
@@ -68,25 +67,19 @@
             </div>
 
             <div class="col">
-              <label>Responsable (obligatoire)</label>
+              <label>Responsable *</label>
               <select id="newAssignee">
                 <option value="">— sélectionner un utilisateur —</option>
               </select>
-              <div class="muted mt10">Liste chargée depuis <b>public.comptes_utilisateurs</b>.</div>
             </div>
           </div>
-
-          <div class="row mt12">
-            <div class="col">
-              <button id="btnCreate">Créer l’action</button>
-            </div>
-          </div>
-
-          <p class="muted mt10">
-            L’auteur est automatiquement l’identifiant “connecté”.
-          </p>
         </div>
       </div>
+      <!-- Bouton déplacé dessous, devient pleine largeur automatiquement -->
+      <div class="row mt12">
+        <button id="btnCreate" style="width: 100%;">Créer l’action</button>
+      </div>
+
     </div>
 
     <div class="card">
@@ -125,7 +118,6 @@
       <form method="dialog" class="dialog-form">
         <div class="dialog-head">
           <h3 class="h3">Modifier l’action</h3>
-          <button class="secondary iconbtn" value="cancel" aria-label="Fermer">✕</button>
         </div>
 
         <input type="hidden" id="editId" />
@@ -133,6 +125,7 @@
         <div class="mt12">
           <label>Description (max 500 caractères)</label>
           <textarea id="editDesc" maxlength="500"></textarea>
+          <div class="muted"><span id="counter">0</span>/500</div>
         </div>
 
         <div class="row mt12">
@@ -167,7 +160,6 @@
             <select id="editAssignee">
               <option value="">— sélectionner un utilisateur —</option>
             </select>
-            <div class="muted mt10">Liste chargée depuis <b>public.comptes_utilisateurs</b>.</div>
           </div>
         </div>
 
