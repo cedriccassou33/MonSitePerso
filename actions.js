@@ -9,6 +9,7 @@
 
   const $ = (id) => document.getElementById(id);
   const toastEl = $("toast");
+  const whoamiEl = $("whoami");
 
   // ENUMS (doivent matcher ceux de la DB)
   const PRIORITIES = ["basse", "moyenne", "haute"];
@@ -21,9 +22,8 @@
   }
 
   function toast(msg, type = "ok") {
-    toastEl.innerHTML = `
-<div class="toast ${type}">${msg}</div>
-`;
+    if (!toastEl) return;
+    toastEl.innerHTML = `<div class="toast ${type}">${msg}</div>`;
     setTimeout(() => (toastEl.innerHTML = ""), 3500);
   }
 
@@ -45,15 +45,9 @@
   }
 
   function statusLabel(s) {
-    return {
-      a_faire: "à faire",
-      en_cours: "en cours",
-      fait: "fait",
-      annule: "annulé",
-    }[s] || s;
+    return { a_faire: "à faire", en_cours: "en cours", fait: "fait", annule: "annulé" }[s] || s;
   }
 
-  // ✅ Correction simple (sécurité XSS) : encodage HTML correct
   function escapeHtml(str) {
     return String(str ?? "")
       .replaceAll("&", "&amp;")
@@ -80,7 +74,6 @@
 
     const prev = keepValue ? sel.value : "";
 
-    // Reset options
     sel.innerHTML = "";
     const placeholder = document.createElement("option");
     placeholder.value = "";
@@ -94,7 +87,6 @@
       sel.appendChild(opt);
     });
 
-    // Restore previous value if possible
     if (prev) {
       ensureOption(sel, prev, prev);
       sel.value = prev;
@@ -118,10 +110,65 @@
     return true;
   }
 
+  // =============== SESSION / LOGOUT ===============
+  function getConnectedIdentifiantFromStorage() {
+    // cohérent avec ton login (index.js) : localStorage.setItem("identifiant", identifiant)
+    return (localStorage.getItem("identifiant") || "").trim(); // [2](https://sanofi-my.sharepoint.com/personal/cedric_cassou_sanofi_com/Documents/Microsoft%20Copilot%20Chat%20Files/index.js)
+  }
+
+  function logout() {
+    localStorage.removeItem("identifiant");
+    // Optionnel : nettoyer aussi d'autres clés si tu en ajoutes plus tard
+    // localStorage.removeItem("token");
+    window.location.href = "index.html";
+  }
+
+  async function validateConnectedUser(ident) {
+    // Vérifie que l'identifiant existe bien dans public.comptes_utilisateurs
+    const { data, error } = await client
+      .from("comptes_utilisateurs")
+      .select("identifiant")
+      .eq("identifiant", ident)
+      .maybeSingle();
+
+    if (error) {
+      console.error(error);
+      toast("Erreur vérification utilisateur : " + error.message, "err");
+      return false;
+    }
+    if (!data?.identifiant) {
+      toast(`Utilisateur "${escapeHtml(ident)}" introuvable. Retour login.`, "err");
+      return false;
+    }
+    return true;
+  }
+
+  async function loadConnectedUserOrRedirect() {
+    const ident = getConnectedIdentifiantFromStorage();
+
+    if (!ident) {
+      toast("Aucun utilisateur connecté. Retour login.", "err");
+      window.location.href = "index.html";
+      return false;
+    }
+
+    const ok = await validateConnectedUser(ident);
+    if (!ok) {
+      localStorage.removeItem("identifiant");
+      window.location.href = "index.html";
+      return false;
+    }
+
+    currentUser = ident;
+
+    if (whoamiEl) whoamiEl.textContent = currentUser;
+
+    toast(`Connecté en tant que : <b>${escapeHtml(currentUser)}</b>`, "ok");
+    return true;
+  }
+
   // =============== USERS (comptes_utilisateurs) ===============
   async function loadUsers() {
-    if (!client) return;
-
     const { data, error } = await client
       .from("comptes_utilisateurs")
       .select("identifiant")
@@ -130,7 +177,7 @@
     if (error) {
       console.error(error);
       toast(
-        "Impossible de charger la liste des utilisateurs (comptes_utilisateurs). Vérifie les policies RLS. " +
+        "Impossible de charger la liste des utilisateurs (comptes_utilisateurs). Vérifie RLS/policies. " +
           error.message,
         "err"
       );
@@ -144,32 +191,20 @@
 
   // =============== CRUD ===============
   async function loadActions() {
-    if (!client) return;
-
-    const ident = $("userId").value.trim();
-    if (!ident) {
-      toast("Renseigne ton identifiant.", "err");
-      return;
-    }
-
-    currentUser = ident;
+    if (!currentUser) return;
 
     let query = client
       .from("actions")
       .select("*")
-      // IMPORTANT: bons noms de colonnes
-      .or(`author_id.eq.${ident},responsible_id.eq.${ident}`);
+      .or(`author_id.eq.${currentUser},responsible_id.eq.${currentUser}`);
 
-    const filterStatus = $("filterStatus").value;
+    const filterStatus = $("filterStatus")?.value || "";
     if (filterStatus) query = query.eq("status", filterStatus);
 
-    const sortBy = $("sortBy").value;
-    if (sortBy === "due_asc")
-      query = query.order("due_date", { ascending: true, nullsFirst: false });
-    if (sortBy === "due_desc")
-      query = query.order("due_date", { ascending: false, nullsFirst: false });
-    if (sortBy === "created_desc")
-      query = query.order("created_at", { ascending: false });
+    const sortBy = $("sortBy")?.value || "created_desc";
+    if (sortBy === "due_asc") query = query.order("due_date", { ascending: true, nullsFirst: false });
+    if (sortBy === "due_desc") query = query.order("due_date", { ascending: false, nullsFirst: false });
+    if (sortBy === "created_desc") query = query.order("created_at", { ascending: false });
 
     const { data, error } = await query;
     if (error) {
@@ -184,22 +219,13 @@
   }
 
   async function createAction() {
-    if (!client) {
-      toast("Client Supabase non initialisé.", "err");
-      return;
-    }
-    if (!currentUser) {
-      toast("Clique sur Charger d’abord.", "err");
-      return;
-    }
+    if (!currentUser) return toast("Utilisateur non défini.", "err");
 
-    const description = $("newDesc").value.trim();
-    const priority = $("newPriority").value;
-    const status = $("newStatus").value;
-    const due_date = fromDatetimeLocalValue($("newDue").value);
-
-    // ✅ maintenant un select
-    const responsible_id = $("newAssignee").value.trim();
+    const description = $("newDesc")?.value.trim() || "";
+    const priority = $("newPriority")?.value || "moyenne";
+    const status = $("newStatus")?.value || "a_faire";
+    const due_date = fromDatetimeLocalValue($("newDue")?.value || "");
+    const responsible_id = ($("newAssignee")?.value || "").trim();
 
     if (!description) return toast("Description obligatoire.", "err");
     if (description.length > 500) return toast("Description > 500 caractères.", "err");
@@ -207,16 +233,9 @@
     if (!STATUSES.includes(status)) return toast("État invalide.", "err");
     if (!responsible_id) return toast("Responsable obligatoire.", "err");
 
-    const payload = {
-      description,
-      priority,
-      status,
-      due_date,
-      author_id: currentUser,
-      responsible_id,
-    };
-
+    const payload = { description, priority, status, due_date, author_id: currentUser, responsible_id };
     const { error } = await client.from("actions").insert(payload);
+
     if (error) {
       console.error(error);
       toast("Erreur création : " + error.message, "err");
@@ -239,10 +258,9 @@
     $("editStatus").value = item.status ?? "a_faire";
     $("editDue").value = toDatetimeLocalValue(item.due_date);
 
-    // ✅ responsable : select
     const sel = $("editAssignee");
     const value = item.responsible_id ?? "";
-    ensureOption(sel, value, value); // si la valeur n'est pas dans la liste (ancien user), on l'ajoute
+    ensureOption(sel, value, value);
     sel.value = value;
 
     $("editDialog").showModal();
@@ -256,8 +274,6 @@
     const priority = $("editPriority").value;
     const status = $("editStatus").value;
     const due_date = fromDatetimeLocalValue($("editDue").value);
-
-    // ✅ maintenant un select
     const responsible_id = $("editAssignee").value.trim();
 
     if (!description) return toast("Description obligatoire.", "err");
@@ -265,8 +281,8 @@
     if (!responsible_id) return toast("Responsable obligatoire.", "err");
 
     const patch = { description, priority, status, due_date, responsible_id };
-
     const { error } = await client.from("actions").update(patch).eq("id", id);
+
     if (error) {
       console.error(error);
       toast("Erreur mise à jour : " + error.message, "err");
@@ -348,50 +364,37 @@
 
   // =============== EVENTS ===============
   function bindEvents() {
-    $("btnConnect").addEventListener("click", async () => {
-      localStorage.setItem("userId", $("userId").value.trim());
-      if (!client && !initSupabase()) return;
+    $("btnCreate")?.addEventListener("click", createAction);
+    $("filterStatus")?.addEventListener("change", loadActions);
+    $("sortBy")?.addEventListener("change", loadActions);
 
-      // ✅ charge la liste d'utilisateurs pour le champ Responsable
-      await loadUsers();
-
-      await loadActions();
-    });
-
-    $("btnClear").addEventListener("click", () => {
-      localStorage.removeItem("userId");
-      location.reload();
-    });
-
-    $("btnCreate").addEventListener("click", createAction);
-    $("filterStatus").addEventListener("change", loadActions);
-    $("sortBy").addEventListener("change", loadActions);
-
-    $("newDesc").addEventListener("input", () => {
+    $("newDesc")?.addEventListener("input", () => {
       $("counter").textContent = String($("newDesc").value.length);
     });
 
-    $("btnSave").addEventListener("click", async (e) => {
+    $("btnSave")?.addEventListener("click", async (e) => {
       e.preventDefault();
       await saveEdit();
       $("editDialog").close();
     });
 
-    $("btnDelete").addEventListener("click", deleteAction);
+    $("btnDelete")?.addEventListener("click", deleteAction);
+
+    // ✅ Déconnexion
+    $("btnLogout")?.addEventListener("click", () => {
+      if (confirm("Se déconnecter ?")) logout();
+    });
   }
 
   // =============== BOOT ===============
-  window.addEventListener("DOMContentLoaded", () => {
-    // Init client dès le chargement
-    initSupabase();
-
-    // Restore identifiant
-    const uid = localStorage.getItem("userId");
-    if (uid) $("userId").value = uid;
-
-    // ✅ tentative de chargement des users dès le départ (si RLS OK)
-    loadUsers();
-
+  window.addEventListener("DOMContentLoaded", async () => {
+    if (!initSupabase()) return;
     bindEvents();
+
+    const ok = await loadConnectedUserOrRedirect();
+    if (!ok) return;
+
+    await loadUsers();
+    await loadActions();
   });
 })();

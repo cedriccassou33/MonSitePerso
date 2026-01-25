@@ -132,3 +132,14 @@ select option {
   color: #1a1f2d !important;        /* texte foncé dans la liste déroulante */
   background: #e8ecf8 !important;   /* fond clair pour la lisibilité */
 }
+
+.topbar .whoami{
+  font-size: 16px;
+  font-weight: 800;
+  margin-top: 4px;
+  color: var(--text);
+}
+
+.topbar button.danger{
+  width: 100%;
+}

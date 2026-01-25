@@ -10,27 +10,22 @@
   <title>Actions - Todo simple</title>
   <link rel="stylesheet" href="./actions.css" />
 </head>
+
 <body>
   <div class="wrap">
     <h1>Gestion d’actions (Todo) – version simple</h1>
 
-    <div class="card">
-      <div class="row">
+    <!-- ✅ Bandeau actions : utilisateur + déconnexion -->
+    <div class="card topbar">
+      <div class="row space-between">
         <div class="col">
-          <label>Mon identifiant</label>
-          <input id="userId" placeholder="ex: cedric" />
+          <div class="muted">Utilisateur connecté</div>
+          <div id="whoami" class="whoami">—</div>
         </div>
-        <div class="col small actionsbar">
-          <button id="btnConnect">Charger</button>
-          <button class="secondary" id="btnClear">Reset</button>
+        <div class="col small">
+          <button id="btnLogout" class="danger">Déconnexion</button>
         </div>
       </div>
-
-      <p class="muted">
-        Cette page affiche les actions où <b>author_id</b> ou <b>responsible_id</b> = ton identifiant.
-        (Mode simple : si ton projet est public, sécurise via RLS/Backend.)
-      </p>
-
       <div id="toast"></div>
     </div>
 
@@ -74,7 +69,6 @@
 
             <div class="col">
               <label>Responsable (obligatoire)</label>
-              <!-- ✅ Remplacement input -> select alimenté via public.comptes_utilisateurs -->
               <select id="newAssignee">
                 <option value="">— sélectionner un utilisateur —</option>
               </select>
@@ -89,7 +83,7 @@
           </div>
 
           <p class="muted mt10">
-            L’auteur est automatiquement ton identifiant.
+            L’auteur est automatiquement l’identifiant “connecté”.
           </p>
         </div>
       </div>
@@ -170,7 +164,6 @@
 
           <div class="col">
             <label>Responsable (obligatoire)</label>
-            <!-- ✅ Remplacement input -> select alimenté via public.comptes_utilisateurs -->
             <select id="editAssignee">
               <option value="">— sélectionner un utilisateur —</option>
             </select>

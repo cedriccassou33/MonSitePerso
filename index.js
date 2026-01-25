@@ -1,8 +1,6 @@
-
 // <<< REMPLACE AVEC TES VALEURS SUPABASE >>>
 const SUPABASE_URL = "https://axlzgvfbmqjwvmmzpimr.supabase.co";
-const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4bHpndmZibXFqd3ZtbXpwaW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MDI3NjQsImV4cCI6MjA4NDA3ODc2NH0.7S7PbON5F_FH2x2Ashd1-9XU6JW2qYMZ482uv0m4kFI";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4bHpndmZibXFqd3ZtbXpwaW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MDI3NjQsImV4cCI6MjA4NDA3ODc2NH0.7S7PbON5F_FH2x2Ashd1-9XU6JW2qYMZ482uv0m4kFI";
 
 const loginBtn = document.getElementById("loginBtn");
 const createAccountBtn = document.getElementById("createAccountBtn");
@@ -103,13 +101,10 @@ function supabaseHeaders(extra = {}) {
  * Vérifie si l'identifiant existe déjà
  */
 async function userExists(identifiant) {
-    //await fetch : Stoppe l’exécution ici et attends que le serveur réponde.
-    //encodeURIComponent transforme les caractères spéciaux en séquences encodées (%XX) compatibles URL
-    //&select=identifiant&limit=1 => renvoie la colonne idetifiant et limite la réponse à une ligne max
   const res = await fetch(
     `${SUPABASE_URL}/rest/v1/comptes_utilisateurs?identifiant=eq.${encodeURIComponent(
       identifiant
-    )}&select=identifiant&limit=1`, 
+    )}&select=identifiant&limit=1`,
     { headers: supabaseHeaders() }
   );
 
@@ -133,8 +128,6 @@ async function hashPassword(motdepasse) {
   });
 
   if (!res.ok) {
-    // Important: on ne stocke PAS le mot de passe en clair.
-    // Si la RPC n'existe pas / échoue, on bloque la création.
     const errText = await res.text().catch(() => "");
     console.error("RPC hash_password error:", res.status, errText);
     throw new Error(
@@ -144,6 +137,7 @@ async function hashPassword(motdepasse) {
 
   const payload = await res.json();
   const hash = extractStringRpcResult(payload);
+
   if (!hash) {
     console.error("RPC hash_password payload inattendu:", payload);
     throw new Error("Impossible de créer le compte : réponse de hachage invalide.");
@@ -154,7 +148,6 @@ async function hashPassword(motdepasse) {
 
 loginBtn.onclick = async () => {
   showMessage(""); // reset message
-
   const identifiant = document.getElementById("identifiant").value.trim();
   const motdepasse = document.getElementById("motdepasse").value;
 
@@ -178,6 +171,7 @@ loginBtn.onclick = async () => {
     }
 
     const data = await res.json();
+
     if (!Array.isArray(data) || data.length === 0) {
       showMessage("Utilisateur inconnu", "error");
       return;
@@ -256,14 +250,15 @@ loginBtn.onclick = async () => {
       }
     }
 
-   
     showMessage("Connexion réussie !", "success");
+
+    // ✅ IMPORTANT : stocker l’identifiant connecté (issu de comptes_utilisateurs)
+    localStorage.setItem("identifiant", identifiant);
 
     // redirection après un court délai
     setTimeout(() => {
-    window.location.href = "actions.html";
+      window.location.href = "actions.html";
     }, 800);
-
   } catch (e) {
     console.error(e);
     showMessage("Erreur réseau / serveur.", "error");
@@ -272,13 +267,15 @@ loginBtn.onclick = async () => {
 
 createAccountBtn.onclick = async () => {
   showMessage(""); // reset message
-
   const identifiant = document.getElementById("identifiant").value.trim();
   const motdepasse = document.getElementById("motdepasse").value;
 
   // 1) Champs obligatoires
   if (!identifiant || !motdepasse) {
-    showMessage("Veuillez remplir l'identifiant et le mot de passe avant de créer un compte.", "error");
+    showMessage(
+      "Veuillez remplir l'identifiant et le mot de passe avant de créer un compte.",
+      "error"
+    );
     return;
   }
 
@@ -311,7 +308,6 @@ createAccountBtn.onclick = async () => {
     });
 
     if (!insertRes.ok) {
-      // Si contrainte unique côté DB, PostgREST peut renvoyer 409
       const errText = await insertRes.text().catch(() => "");
       console.error("INSERT error:", insertRes.status, errText);
 
