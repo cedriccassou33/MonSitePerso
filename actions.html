@@ -3,17 +3,13 @@
 <html lang="fr">
 <head>
   <meta charset="utf-8" />
-
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <!-- ⚠️ Remplace par tes vraies valeurs (MÊMES que dans login.html) -->
   <meta name="supabase-url" content="https://axlzgvfbmqjwvmmzpimr.supabase.co">
   <meta name="supabase-anon" content="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF4bHpndmZibXFqd3ZtbXpwaW1yIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg1MDI3NjQsImV4cCI6MjA4NDA3ODc2NH0.7S7PbON5F_FH2x2Ashd1-9XU6JW2qYMZ482uv0m4kFI">
-
   <title>Actions - Todo simple</title>
-
   <link rel="stylesheet" href="./actions.css" />
 </head>
-
 <body>
   <div class="wrap">
     <h1>Gestion d’actions (Todo) – version simple</h1>
@@ -24,7 +20,6 @@
           <label>Mon identifiant</label>
           <input id="userId" placeholder="ex: cedric" />
         </div>
-
         <div class="col small actionsbar">
           <button id="btnConnect">Charger</button>
           <button class="secondary" id="btnClear">Reset</button>
@@ -35,6 +30,7 @@
         Cette page affiche les actions où <b>author_id</b> ou <b>responsible_id</b> = ton identifiant.
         (Mode simple : si ton projet est public, sécurise via RLS/Backend.)
       </p>
+
       <div id="toast"></div>
     </div>
 
@@ -78,7 +74,11 @@
 
             <div class="col">
               <label>Responsable (obligatoire)</label>
-              <input id="newAssignee" placeholder="identifiant responsable" />
+              <!-- ✅ Remplacement input -> select alimenté via public.comptes_utilisateurs -->
+              <select id="newAssignee">
+                <option value="">— sélectionner un utilisateur —</option>
+              </select>
+              <div class="muted mt10">Liste chargée depuis <b>public.comptes_utilisateurs</b>.</div>
             </div>
           </div>
 
@@ -170,7 +170,11 @@
 
           <div class="col">
             <label>Responsable (obligatoire)</label>
-            <input id="editAssignee" />
+            <!-- ✅ Remplacement input -> select alimenté via public.comptes_utilisateurs -->
+            <select id="editAssignee">
+              <option value="">— sélectionner un utilisateur —</option>
+            </select>
+            <div class="muted mt10">Liste chargée depuis <b>public.comptes_utilisateurs</b>.</div>
           </div>
         </div>
 
@@ -188,6 +192,7 @@
         </p>
       </form>
     </dialog>
+
   </div>
 
   <!-- Supabase JS v2 -->

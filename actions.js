@@ -5,6 +5,7 @@
   let client = null;
   let currentUser = "";
   let cached = [];
+  let cachedUsers = [];
 
   const $ = (id) => document.getElementById(id);
   const toastEl = $("toast");
@@ -20,7 +21,9 @@
   }
 
   function toast(msg, type = "ok") {
-    toastEl.innerHTML = `<div class="toast ${type}">${msg}</div>`;
+    toastEl.innerHTML = `
+<div class="toast ${type}">${msg}</div>
+`;
     setTimeout(() => (toastEl.innerHTML = ""), 3500);
   }
 
@@ -31,7 +34,9 @@
   function toDatetimeLocalValue(isoString) {
     if (!isoString) return "";
     const d = new Date(isoString);
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+      d.getHours()
+    )}:${pad(d.getMinutes())}`;
   }
 
   function fromDatetimeLocalValue(v) {
@@ -40,9 +45,15 @@
   }
 
   function statusLabel(s) {
-    return { a_faire: "à faire", en_cours: "en cours", fait: "fait", annule: "annulé" }[s] || s;
+    return {
+      a_faire: "à faire",
+      en_cours: "en cours",
+      fait: "fait",
+      annule: "annulé",
+    }[s] || s;
   }
 
+  // ✅ Correction simple (sécurité XSS) : encodage HTML correct
   function escapeHtml(str) {
     return String(str ?? "")
       .replaceAll("&", "&amp;")
@@ -50,6 +61,44 @@
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#039;");
+  }
+
+  function ensureOption(selectEl, value, label = value) {
+    if (!value) return;
+    const exists = [...selectEl.options].some((o) => o.value === value);
+    if (!exists) {
+      const opt = document.createElement("option");
+      opt.value = value;
+      opt.textContent = label;
+      selectEl.appendChild(opt);
+    }
+  }
+
+  function populateUserSelect(selectId, users, keepValue = true) {
+    const sel = $(selectId);
+    if (!sel) return;
+
+    const prev = keepValue ? sel.value : "";
+
+    // Reset options
+    sel.innerHTML = "";
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = "— sélectionner un utilisateur —";
+    sel.appendChild(placeholder);
+
+    users.forEach((u) => {
+      const opt = document.createElement("option");
+      opt.value = u.identifiant;
+      opt.textContent = u.identifiant;
+      sel.appendChild(opt);
+    });
+
+    // Restore previous value if possible
+    if (prev) {
+      ensureOption(sel, prev, prev);
+      sel.value = prev;
+    }
   }
 
   // =============== SUPABASE INIT ===============
@@ -65,9 +114,32 @@
       toast("supabase-js non chargé (vérifie le script CDN).", "err");
       return false;
     }
-
     client = window.supabase.createClient(url, anon);
     return true;
+  }
+
+  // =============== USERS (comptes_utilisateurs) ===============
+  async function loadUsers() {
+    if (!client) return;
+
+    const { data, error } = await client
+      .from("comptes_utilisateurs")
+      .select("identifiant")
+      .order("identifiant", { ascending: true });
+
+    if (error) {
+      console.error(error);
+      toast(
+        "Impossible de charger la liste des utilisateurs (comptes_utilisateurs). Vérifie les policies RLS. " +
+          error.message,
+        "err"
+      );
+      return;
+    }
+
+    cachedUsers = data ?? [];
+    populateUserSelect("newAssignee", cachedUsers, true);
+    populateUserSelect("editAssignee", cachedUsers, true);
   }
 
   // =============== CRUD ===============
@@ -79,6 +151,7 @@
       toast("Renseigne ton identifiant.", "err");
       return;
     }
+
     currentUser = ident;
 
     let query = client
@@ -91,19 +164,21 @@
     if (filterStatus) query = query.eq("status", filterStatus);
 
     const sortBy = $("sortBy").value;
-    if (sortBy === "due_asc") query = query.order("due_date", { ascending: true, nullsFirst: false });
-    if (sortBy === "due_desc") query = query.order("due_date", { ascending: false, nullsFirst: false });
-    if (sortBy === "created_desc") query = query.order("created_at", { ascending: false });
+    if (sortBy === "due_asc")
+      query = query.order("due_date", { ascending: true, nullsFirst: false });
+    if (sortBy === "due_desc")
+      query = query.order("due_date", { ascending: false, nullsFirst: false });
+    if (sortBy === "created_desc")
+      query = query.order("created_at", { ascending: false });
 
     const { data, error } = await query;
-
     if (error) {
       console.error(error);
       toast("Erreur chargement : " + error.message, "err");
       return;
     }
 
-    cached = data || [];
+    cached = data ?? [];
     renderList();
     toast(`Chargé : ${cached.length} action(s).`, "ok");
   }
@@ -122,6 +197,8 @@
     const priority = $("newPriority").value;
     const status = $("newStatus").value;
     const due_date = fromDatetimeLocalValue($("newDue").value);
+
+    // ✅ maintenant un select
     const responsible_id = $("newAssignee").value.trim();
 
     if (!description) return toast("Description obligatoire.", "err");
@@ -136,11 +213,10 @@
       status,
       due_date,
       author_id: currentUser,
-      responsible_id
+      responsible_id,
     };
 
     const { error } = await client.from("actions").insert(payload);
-
     if (error) {
       console.error(error);
       toast("Erreur création : " + error.message, "err");
@@ -162,7 +238,13 @@
     $("editPriority").value = item.priority ?? "moyenne";
     $("editStatus").value = item.status ?? "a_faire";
     $("editDue").value = toDatetimeLocalValue(item.due_date);
-    $("editAssignee").value = item.responsible_id ?? "";
+
+    // ✅ responsable : select
+    const sel = $("editAssignee");
+    const value = item.responsible_id ?? "";
+    ensureOption(sel, value, value); // si la valeur n'est pas dans la liste (ancien user), on l'ajoute
+    sel.value = value;
+
     $("editDialog").showModal();
   }
 
@@ -174,6 +256,8 @@
     const priority = $("editPriority").value;
     const status = $("editStatus").value;
     const due_date = fromDatetimeLocalValue($("editDue").value);
+
+    // ✅ maintenant un select
     const responsible_id = $("editAssignee").value.trim();
 
     if (!description) return toast("Description obligatoire.", "err");
@@ -183,7 +267,6 @@
     const patch = { description, priority, status, due_date, responsible_id };
 
     const { error } = await client.from("actions").update(patch).eq("id", id);
-
     if (error) {
       console.error(error);
       toast("Erreur mise à jour : " + error.message, "err");
@@ -201,7 +284,6 @@
     if (!confirm("Supprimer cette action ?")) return;
 
     const { error } = await client.from("actions").delete().eq("id", id);
-
     if (error) {
       console.error(error);
       toast("Erreur suppression : " + error.message, "err");
@@ -229,37 +311,36 @@
         const sClass = `status s-${a.status}`;
 
         return `
-          <div class="item">
-            <div class="item-header">
-              <div>
-                <div class="item-title">
-                  ${escapeHtml(a.description).slice(0, 80)}${a.description?.length > 80 ? "…" : ""}
-                </div>
-                <div class="meta">
-                  <span class="${sClass}">${escapeHtml(statusLabel(a.status))}</span>
-                  <span class="badge">priorité: <b>${escapeHtml(a.priority)}</b></span>
-                  <span class="badge">échéance: <b>${escapeHtml(due)}</b></span>
-                  <span class="badge">auteur: <b>${escapeHtml(a.author_id)}</b></span>
-                  <span class="badge">responsable: <b>${escapeHtml(a.responsible_id)}</b></span>
-                  <span class="badge">vu en tant que: <b>${escapeHtml(roleView)}</b></span>
-                </div>
-              </div>
+<div class="item">
+  <div class="item-header">
+    <div>
+      <div class="item-title">${escapeHtml(a.description ?? "").slice(0, 80)}${
+          (a.description?.length ?? 0) > 80 ? "…" : ""
+        }</div>
+      <div class="meta">
+        <span class="${sClass}">${escapeHtml(statusLabel(a.status))}</span>
+        <span class="badge">priorité: <b>${escapeHtml(a.priority)}</b></span>
+        <span class="badge">échéance: <b>${escapeHtml(due)}</b></span>
+        <span class="badge">auteur: <b>${escapeHtml(a.author_id)}</b></span>
+        <span class="badge">responsable: <b>${escapeHtml(a.responsible_id)}</b></span>
+        <span class="badge">vu en tant que: <b>${escapeHtml(roleView)}</b></span>
+      </div>
+    </div>
+    <div>
+      <button class="secondary" data-edit="${escapeHtml(a.id)}">Modifier</button>
+    </div>
+  </div>
 
-              <div style="min-width:120px;">
-                <button class="secondary" data-edit="${a.id}">Modifier</button>
-              </div>
-            </div>
-
-            <div class="item-desc">${escapeHtml(a.description)}</div>
-          </div>
-        `;
+  <p class="item-desc">${escapeHtml(a.description ?? "")}</p>
+</div>
+`;
       })
       .join("");
 
     list.querySelectorAll("[data-edit]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.getAttribute("data-edit");
-        const item = cached.find((x) => x.id === id);
+        const item = cached.find((x) => String(x.id) === String(id));
         if (item) openEdit(item);
       });
     });
@@ -269,8 +350,11 @@
   function bindEvents() {
     $("btnConnect").addEventListener("click", async () => {
       localStorage.setItem("userId", $("userId").value.trim());
-
       if (!client && !initSupabase()) return;
+
+      // ✅ charge la liste d'utilisateurs pour le champ Responsable
+      await loadUsers();
+
       await loadActions();
     });
 
@@ -304,6 +388,9 @@
     // Restore identifiant
     const uid = localStorage.getItem("userId");
     if (uid) $("userId").value = uid;
+
+    // ✅ tentative de chargement des users dès le départ (si RLS OK)
+    loadUsers();
 
     bindEvents();
   });
