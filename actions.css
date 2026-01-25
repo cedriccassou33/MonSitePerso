@@ -121,3 +121,14 @@ button.danger{
   width:auto;
   padding:8px 10px;
 }
+
+/* Texte plus foncé et plus lisible dans les listes déroulantes */
+select {
+  color: #cfd8f0 !important;        /* texte plus contrasté */
+  font-weight: 600;                 /* un peu plus gras pour améliorer la lisibilité */
+}
+
+select option {
+  color: #1a1f2d !important;        /* texte foncé dans la liste déroulante */
+  background: #e8ecf8 !important;   /* fond clair pour la lisibilité */
+}
